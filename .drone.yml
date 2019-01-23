@@ -1,0 +1,16 @@
+---
+
+workspace:
+  base: /go
+  path: src/github.com/packethost/pkh
+
+pipeline:
+  lint:
+    group: ci
+    image: golang:1.10-alpine
+    commands:
+      - apk add --update --upgrade --no-cache git
+      - go get -v -u github.com/alecthomas/gometalinter
+      - gometalinter --install
+      - gometalinter --errors --vendor --vendored-linters ./...
+      - gofmt -d *.go | (! grep '.')
