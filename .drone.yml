@@ -17,7 +17,7 @@ pipeline:
   
   test:
     group: ci
-    image: golang:1.10-alpine
+    image: golang:1.11.1
     commands:
       - ./scripts/test
 
