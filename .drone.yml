@@ -14,7 +14,12 @@ pipeline:
       - gometalinter --install
       - gometalinter --errors --vendor --vendored-linters ./...
       - gofmt -d *.go | (! grep '.')
-      - go test ./... -v
+  
+  test:
+    group: ci
+    image: golang:1.10-alpine
+    commands:
+      - ./scripts/test
 
   codecov:
     group: notifications
