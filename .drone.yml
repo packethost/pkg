@@ -2,7 +2,7 @@
 
 workspace:
   base: /go
-  path: src/github.com/packethost/pkh
+  path: src/github.com/packethost/pkg
 
 pipeline:
   lint:
@@ -14,3 +14,14 @@ pipeline:
       - gometalinter --install
       - gometalinter --errors --vendor --vendored-linters ./...
       - gofmt -d *.go | (! grep '.')
+  
+  test:
+    group: ci
+    image: golang:1.11.1
+    commands:
+      - ./scripts/test
+
+  codecov:
+    group: notifications
+    image: plugins/codecov
+    secrets: [codecov_token]
