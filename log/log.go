@@ -9,13 +9,14 @@ import (
 )
 
 var (
+	// yes its a global core/root logger
 	logger   *zap.Logger
-	logLevel = zap.LevelFlag("log-level", zap.InfoLevel, "Log level, one of FATAL, PANIC, DPANIC, ERROR, WARN, INFO, or DEBUG")
+	logLevel = zap.LevelFlag("log-level", zap.InfoLevel, "Log level, one of ERROR, INFO, or DEBUG")
 )
 
 // Logger is a wrapper around zap.SugaredLogger
 type Logger struct {
-	*zap.SugaredLogger
+	s *zap.SugaredLogger
 }
 
 // Init initializes the logging system and sets the "service" key to the provided argument.
@@ -41,25 +42,22 @@ func Init(service string) (Logger, func(), error) {
 		logger.Sync()
 	}
 
-	return Logger{logger.Sugar()}, cleanup, nil
+	return Logger{s: logger.Sugar()}, cleanup, nil
 }
 
-func (l Logger) Notice(args ...interface{}) {
-	l.Info(args)
+func (l Logger) Error(err error, args ...interface{}) {
+	l.s.With("error", err).Error(args)
 }
-
-func (l Logger) Trace(args ...interface{}) {
-	l.Debug(args)
+func (l Logger) Info(args ...interface{}) {
+	l.s.Info(args)
 }
-
-func (l Logger) Warning(args ...interface{}) {
-	l.Warn(args)
+func (l Logger) Debug(args ...interface{}) {
+	l.s.Debug(args)
 }
-
 func (l Logger) With(args ...interface{}) Logger {
-	return Logger{l.SugaredLogger.With(args)}
+	return Logger{s: l.s.With(args)}
 }
 
 func (l Logger) Package(pkg string) Logger {
-	return Logger{l.SugaredLogger.With("pkg", pkg)}
+	return Logger{s: l.s.With("pkg", pkg)}
 }
