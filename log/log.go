@@ -9,8 +9,6 @@ import (
 )
 
 var (
-	// yes its a global core/root logger
-	logger   *zap.Logger
 	logLevel = zap.LevelFlag("log-level", zap.InfoLevel, "Log level, one of ERROR, INFO, or DEBUG")
 )
 
@@ -35,14 +33,14 @@ func Init(service string) (Logger, func(), error) {
 		return Logger{}, nil, errors.Wrap(err, "failed to build logger config")
 	}
 
-	logger = l.With(zap.String("service", service))
+	l = l.With(zap.String("service", service))
 
 
 	cleanup := func() {
-		logger.Sync()
+		l.Sync()
 	}
 
-	return Logger{s: logger.Sugar()}, cleanup, nil
+	return Logger{s: l.Sugar()}, cleanup, nil
 }
 
 func (l Logger) Error(err error, args ...interface{}) {
