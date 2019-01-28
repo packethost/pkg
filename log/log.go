@@ -1,4 +1,15 @@
-// package log sets up a shared zap.Logger that can be used by all packages.
+// package log sets up a shared logger that can be used by all packages run under one binary.
+//
+// This package wraps zap very lightly so zap best practices apply here too, namely use `With` for KV pairs to add context to a line.
+// The lack of a wide gamut of logging levels is by design.
+// The intended use case for each of the levels are:
+//   Error:
+//     Logs a message as an error, may also have external side effects such as posting to rollbar, sentry or alerting directly.
+//   Info:
+//     Used for production.
+//     Context should all be in K=V pairs so they can be useful to ops and future-you-at-3am.
+//   Debug:
+//     Meant for developer use *during development*.
 package log
 
 import (
@@ -9,7 +20,8 @@ import (
 )
 
 var (
-	logLevel = zap.LevelFlag("log-level", zap.InfoLevel, "Log level, one of ERROR, INFO, or DEBUG")
+	// zap.LevelFlag adds an option to the default set of command line flags as part of the flag pacakge.
+	logLevel = zap.LevelFlag("log-level", zap.InfoLevel, "Log level. one of ERROR, INFO, or DEBUG")
 )
 
 // Logger is a wrapper around zap.SugaredLogger
@@ -43,19 +55,30 @@ func Init(service string) (Logger, func(), error) {
 	return Logger{s: l.Sugar()}, cleanup, nil
 }
 
+// Error is used to log an error, the error will be forwared to rollbar and/or other external services.
 func (l Logger) Error(err error, args ...interface{}) {
 	l.s.With("error", err).Error(args)
 }
+
+// Info is used to log message in production, only simple strings should be given in the args.
+// Context should be added as K=V pairs using the `With` method.
 func (l Logger) Info(args ...interface{}) {
 	l.s.Info(args)
 }
+
+// Debug is used to log messages in development, not even for lab.
+// No one cares what you pass to Debug.
 func (l Logger) Debug(args ...interface{}) {
 	l.s.Debug(args)
 }
+
+// With is used to add context to the logger, a new logger copy with the new K=V pairs as context is returned.
 func (l Logger) With(args ...interface{}) Logger {
 	return Logger{s: l.s.With(args)}
 }
 
+// Package returns a copy of the logger with the "pkg" set to the argument.
+// It should be called before the original Logger has had any keys set to values, otherwise confusion may ensue.
 func (l Logger) Package(pkg string) Logger {
 	return Logger{s: l.s.With("pkg", pkg)}
 }
