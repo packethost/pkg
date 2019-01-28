@@ -20,7 +20,7 @@ type Logger struct {
 
 // Init initializes the logging system and sets the "service" key to the provided argument.
 // This func should only be called once and after flag.Parse() has been called otherwise leveled logging will not be configured correctly.
-func Init(service string) (Logger, func() error, error) {
+func Init(service string) (Logger, func(), error) {
 	var config zap.Config
 	if os.Getenv("DEBUG") != "" {
 		config = zap.NewDevelopmentConfig()
@@ -36,7 +36,12 @@ func Init(service string) (Logger, func() error, error) {
 
 	logger = l.With(zap.String("service", service))
 
-	return Logger{logger.Sugar()}, logger.Sync, nil
+
+	cleanup := func() {
+		logger.Sync()
+	}
+
+	return Logger{logger.Sugar()}, cleanup, nil
 }
 
 func (l Logger) Notice(args ...interface{}) {
