@@ -15,6 +15,7 @@ package log
 import (
 	"os"
 
+	"github.com/packethost/pkg/log/internal/rollbar"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -48,7 +49,9 @@ func Init(service string) (Logger, func(), error) {
 	l = l.With(zap.String("service", service))
 
 
+	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
 	cleanup := func() {
+		rollbarClean()
 		l.Sync()
 	}
 
@@ -57,6 +60,7 @@ func Init(service string) (Logger, func(), error) {
 
 // Error is used to log an error, the error will be forwared to rollbar and/or other external services.
 func (l Logger) Error(err error, args ...interface{}) {
+	rollbar.Notify(err, args)
 	l.s.With("error", err).Error(args)
 }
 

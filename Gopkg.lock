@@ -10,6 +10,14 @@
   version = "v0.8.1"
 
 [[projects]]
+  digest = "1:03a89169777b38862145711ef2317a36e19e1cdf717ab622e196f6a851b71ad9"
+  name = "github.com/rollbar/rollbar-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d450a931d7a085523b60f0f7c98487333a8ce5fa"
+  version = "v1.0.2"
+
+[[projects]]
   digest = "1:3c1a69cdae3501bf75e76d0d86dc6f2b0a7421bc205c0cb7b96b19eed464a34d"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -45,6 +53,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/pkg/errors",
+    "github.com/rollbar/rollbar-go",
     "go.uber.org/zap",
   ]
   solver-name = "gps-cdcl"
