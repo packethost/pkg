@@ -31,13 +31,11 @@ func Init(service string) (Logger, func() error, error) {
 
 	l, err := config.Build()
 	if err != nil {
-		err = errors.Wrap(err, "failed to build logger config")
+		return Logger{}, nil, errors.Wrap(err, "failed to build logger config")
 	}
+
 	logger = l.With(zap.String("service", service))
 
-	if err != nil {
-		return Logger{}, nil, err
-	}
 	return Logger{logger.Sugar()}, logger.Sync, nil
 }
 
