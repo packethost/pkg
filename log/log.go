@@ -30,6 +30,18 @@ type Logger struct {
 	s *zap.SugaredLogger
 }
 
+func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
+	l = l.With(zap.String("service", service))
+
+	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
+	cleanup := func() {
+		rollbarClean()
+		l.Sync()
+	}
+
+	return Logger{s: l.Sugar()}, cleanup, nil
+}
+
 // Init initializes the logging system and sets the "service" key to the provided argument.
 // This func should only be called once and after flag.Parse() has been called otherwise leveled logging will not be configured correctly.
 func Init(service string) (Logger, func(), error) {
@@ -39,6 +51,12 @@ func Init(service string) (Logger, func(), error) {
 	} else {
 		config = zap.NewProductionConfig()
 	}
+
+	if os.Getenv("LOG_DISCARD_LOGS") != "" {
+		config.OutputPaths = nil
+		config.ErrorOutputPaths = nil
+	}
+
 	config.Level = zap.NewAtomicLevelAt(*logLevel)
 
 	l, err := config.Build()
@@ -46,16 +64,7 @@ func Init(service string) (Logger, func(), error) {
 		return Logger{}, nil, errors.Wrap(err, "failed to build logger config")
 	}
 
-	l = l.With(zap.String("service", service))
-
-
-	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
-	cleanup := func() {
-		rollbarClean()
-		l.Sync()
-	}
-
-	return Logger{s: l.Sugar()}, cleanup, nil
+	return configureLogger(l, service)
 }
 
 // Error is used to log an error, the error will be forwared to rollbar and/or other external services.
@@ -78,7 +87,7 @@ func (l Logger) Debug(args ...interface{}) {
 
 // With is used to add context to the logger, a new logger copy with the new K=V pairs as context is returned.
 func (l Logger) With(args ...interface{}) Logger {
-	return Logger{s: l.s.With(args)}
+	return Logger{s: l.s.With(args...)}
 }
 
 // Package returns a copy of the logger with the "pkg" set to the argument.
