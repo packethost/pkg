@@ -14,12 +14,12 @@ pipeline:
       - gometalinter --install
       - gometalinter --errors --vendor --vendored-linters ./...
       - gofmt -d *.go | (! grep '.')
-  
+
   test:
     group: ci
     image: golang:1.11.1
     commands:
-      - ./scripts/test
+      - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
   codecov:
     group: notifications
