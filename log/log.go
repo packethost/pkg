@@ -72,8 +72,12 @@ func Init(service string) (Logger, func(), error) {
 
 // Error is used to log an error, the error will be forwared to rollbar and/or other external services.
 // All the values of arg are stringified and concatenated without any strings.
+// If no args are provided err.Error() is used as the log message.
 func (l Logger) Error(err error, args ...interface{}) {
 	rollbar.Notify(err, args)
+	if len(args) == 0 {
+		args = append(args, err)
+	}
 	l.s.With("error", err).Error(args...)
 }
 

@@ -16,14 +16,15 @@ func TestLogging(t *testing.T) {
 	os.Setenv("PACKET_VERSION", "1")
 	os.Setenv("ROLLBAR_DISABLE", "1")
 
+	errorMessage := "the flobnarm overheated"
 	tests := []struct {
 		level    zapcore.Level
 		levels   []zapcore.Level
 		messages []string
 	}{
-		{zap.DebugLevel, []zapcore.Level{zap.DebugLevel, zap.InfoLevel, zap.ErrorLevel}, []string{"debug", "info", "error"}},
-		{zap.InfoLevel, []zapcore.Level{zap.InfoLevel, zap.ErrorLevel}, []string{"info", "error"}},
-		{zap.ErrorLevel, []zapcore.Level{zap.ErrorLevel}, []string{"error"}},
+		{zap.DebugLevel, []zapcore.Level{zap.DebugLevel, zap.InfoLevel, zap.ErrorLevel, zap.ErrorLevel}, []string{"debug", "info", "oh no an error", errorMessage}},
+		{zap.InfoLevel, []zapcore.Level{zap.InfoLevel, zap.ErrorLevel, zap.ErrorLevel}, []string{"info", "oh no an error", errorMessage}},
+		{zap.ErrorLevel, []zapcore.Level{zap.ErrorLevel, zap.ErrorLevel}, []string{"oh no an error", errorMessage}},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.level), func(t *testing.T) {
@@ -40,7 +41,8 @@ func TestLogging(t *testing.T) {
 
 			logger.Debug("debug")
 			logger.Info("info")
-			logger.Error(fmt.Errorf("an error"), "error")
+			logger.Error(fmt.Errorf(errorMessage), "oh no an error")
+			logger.Error(fmt.Errorf(errorMessage))
 
 			if logs.Len() != len(tt.messages) {
 				t.Fatalf("unexpected number of messages: want=%d, got=%d", len(tt.messages), logs.Len())
@@ -54,14 +56,14 @@ func TestLogging(t *testing.T) {
 				msg := tt.messages[i]
 				got := log.Message
 				if got != msg {
-					t.Fatalf("unexpected message: want=%s, got=%s", msg, got)
+					t.Fatalf("unexpected message:\nwant=|%s|\n got=|%s|", msg, got)
 				}
 
 				contexts := map[string]string{
 					"service": service,
 				}
 				if log.Level == zap.ErrorLevel {
-					contexts["error"] = "an error"
+					contexts["error"] = errorMessage
 				}
 
 				ctx := log.ContextMap()
@@ -75,7 +77,7 @@ func TestLogging(t *testing.T) {
 						t.Fatalf("missing key in context: key=%s contexts:%v", k, ctx)
 					}
 					if gotV != wantV {
-						t.Fatalf("unexpected value for service context: want=%s, got=%s", wantV, gotV)
+						t.Fatalf("unexpected value for service context:\nwant=%s\n got=%s", wantV, gotV)
 					}
 				}
 			}
