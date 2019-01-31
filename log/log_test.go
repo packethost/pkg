@@ -51,7 +51,7 @@ func TestLogging(t *testing.T) {
 					t.Fatalf("unexpected log level: want=%v, got=%v", tt.levels[i], log.Level)
 				}
 
-				msg := "[" + tt.messages[i] + "]"
+				msg := tt.messages[i]
 				got := log.Message
 				if got != msg {
 					t.Fatalf("unexpected message: want=%s, got=%s", msg, got)
@@ -158,7 +158,6 @@ func TestContext(t *testing.T) {
 	assertMapsEqual(contexts, msgs[5].ContextMap())
 
 	for i, msg := range []string{"logger1 info", "logger1 info2", "logger2 info", "packaged1 info", "packaged2 info", "logger1 info3"} {
-		msg = "[" + msg + "]"
 		got := msgs[i].Message
 		if got != msg {
 			t.Fatalf("unexpected message: want=%s, got=%s", msg, got)

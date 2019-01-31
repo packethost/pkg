@@ -70,19 +70,19 @@ func Init(service string) (Logger, func(), error) {
 // Error is used to log an error, the error will be forwared to rollbar and/or other external services.
 func (l Logger) Error(err error, args ...interface{}) {
 	rollbar.Notify(err, args)
-	l.s.With("error", err).Error(args)
+	l.s.With("error", err).Error(args...)
 }
 
 // Info is used to log message in production, only simple strings should be given in the args.
 // Context should be added as K=V pairs using the `With` method.
 func (l Logger) Info(args ...interface{}) {
-	l.s.Info(args)
+	l.s.Info(args...)
 }
 
 // Debug is used to log messages in development, not even for lab.
 // No one cares what you pass to Debug.
 func (l Logger) Debug(args ...interface{}) {
-	l.s.Debug(args)
+	l.s.Debug(args...)
 }
 
 // With is used to add context to the logger, a new logger copy with the new K=V pairs as context is returned.
