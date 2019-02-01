@@ -57,16 +57,38 @@ func (e rError) Cause() error {
 	return errors.Cause(error(e.err))
 }
 
+// logInternalError is a helper to log errors through zap and to rollbar if we run into an error while logging a client's error.
+// We can use rollbar.ErrorWithExtras here because the stack trace rollbar collects will be of where error is.
+// This handles the so called "error while logging error" case.
+func logInternalError(err error, ctx map[string]interface{}) {
+	l := log.With("error", err)
+	if len(ctx) != 0 {
+		fields := make([]interface{}, 0, len(ctx)*2)
+		for k, v := range ctx {
+			fields = append(fields, k)
+			fields = append(fields, v)
+		}
+		l = l.With(fields...)
+	}
+	ctx["errorVerbose"] = fmt.Sprintf("%+v", err)
+	l.Error(err)
+	// 1 level of stack frames are skipped, because we don't want care to have logInternalError show up
+	rollbar.ErrorWithStackSkipWithExtras(rollbar.ERR, err, 1, ctx)
+}
+
 // Stack converts a github.com/pkg/errors Error stack into a rollbar stack
 func (e rError) Stack() rollbar.Stack {
 	type stackTracer interface {
 		StackTrace() errors.StackTrace
 	}
 
+	ctx := map[string]interface{}{}
+
 	cause := e.Cause()
 	err, ok := cause.(stackTracer)
 	if !ok {
-		log.Errorw("error does not implement StackTracer", "error", cause)
+		ctx["cause"] = cause
+		logInternalError(errors.New("cause does not implement StackTracer"), ctx)
 		return nil
 	}
 
@@ -77,13 +99,17 @@ func (e rError) Stack() rollbar.Stack {
 	for i := range stack {
 		b.Reset()
 		fmt.Fprintf(&b, "%+s", stack[i])
-		n, err := fmt.Sscanf(b.String(), "%s\n\t%s", &rStack[i].Filename, &rStack[i].Method)
+		n, err := fmt.Sscanf(b.String(), "%s\n\t%s", &rStack[i].Method, &rStack[i].Filename)
+
 		if err != nil {
-			log.With("error", errors.Wrap(err, "scanning stack frame"), "lineString", b.String()).Error("failed to scan stack frame")
+			ctx["lineString"] = b.String()
+			logInternalError(errors.Wrap(err, "failed to scan stack frame"), ctx)
 			return nil
 		}
 		if n != 2 {
-			log.Errorw("failed to scan stack frame", "lineString", b.String(), "num", n)
+			ctx["lineString"] = b.String()
+			ctx["count"] = n
+			logInternalError(errors.Wrap(err, "unexpected number of values scanned when scanning for stack frame func and file names"), ctx)
 			return nil
 		}
 
@@ -91,11 +117,14 @@ func (e rError) Stack() rollbar.Stack {
 		fmt.Fprintf(&b, "%d", stack[i])
 		n, err = fmt.Sscanf(b.String(), "%d", &rStack[i].Line)
 		if err != nil {
-			log.With("error", errors.Wrap(err, "scanning stack frame line number"), "lineString", b.String()).Error("failed to scan stack frame line number")
+			ctx["lineString"] = b.String()
+			logInternalError(errors.Wrap(err, "failed to scan stack frame line number"), ctx)
 			return nil
 		}
 		if n != 1 {
-			log.Errorw("failed to scan stack frame line number", "lineString", b.String(), "num", n)
+			ctx["lineString"] = b.String()
+			ctx["count"] = n
+			logInternalError(errors.Wrap(err, "unexpected number of values scanned when scanning for stack frame line number"), ctx)
 			return nil
 		}
 	}
