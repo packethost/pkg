@@ -3,7 +3,6 @@ package rollbar
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -76,20 +75,29 @@ func (e rError) Stack() rollbar.Stack {
 
 	var b strings.Builder
 	for i := range stack {
-		fmt.Fprintf(&b, "%s", stack[i])
-		rStack[i].Filename = b.String()
-
-		fmt.Fprintf(&b, "%n", stack[i])
-		rStack[i].Method = b.String()
-
-		fmt.Fprintf(&b, "%d", stack[i])
-		d, err := strconv.Atoi(b.String())
+		b.Reset()
+		fmt.Fprintf(&b, "%+s", stack[i])
+		n, err := fmt.Sscanf(b.String(), "%s\n\t%s", &rStack[i].Filename, &rStack[i].Method)
 		if err != nil {
-			log.Errorw("failed to convert frame line number to int", "lineString", b.String())
+			log.With("error", errors.Wrap(err, "scanning stack frame"), "lineString", b.String()).Error("failed to scan stack frame")
 			return nil
 		}
-		rStack[i].Line = d
+		if n != 2 {
+			log.Errorw("failed to scan stack frame", "lineString", b.String(), "num", n)
+			return nil
+		}
+
 		b.Reset()
+		fmt.Fprintf(&b, "%d", stack[i])
+		n, err = fmt.Sscanf(b.String(), "%d", &rStack[i].Line)
+		if err != nil {
+			log.With("error", errors.Wrap(err, "scanning stack frame line number"), "lineString", b.String()).Error("failed to scan stack frame line number")
+			return nil
+		}
+		if n != 1 {
+			log.Errorw("failed to scan stack frame line number", "lineString", b.String(), "num", n)
+			return nil
+		}
 	}
 
 	return rStack
