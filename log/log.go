@@ -51,6 +51,9 @@ func Init(service string) (Logger, func(), error) {
 	} else {
 		config = zap.NewProductionConfig()
 	}
+	// We expect that errors will already log the stacktrace from pkg/errors functionality as errorVerbose context
+	// key
+	config.DisableStacktrace = true
 
 	if os.Getenv("LOG_DISCARD_LOGS") != "" {
 		config.OutputPaths = nil
