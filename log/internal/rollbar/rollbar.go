@@ -81,18 +81,17 @@ func (e rError) Stack() rollbar.Stack {
 	type stackTracer interface {
 		StackTrace() errors.StackTrace
 	}
-
 	ctx := map[string]interface{}{}
 
 	cause := e.Cause()
-	err, ok := cause.(stackTracer)
+	st, ok := cause.(stackTracer)
 	if !ok {
 		ctx["cause"] = cause
 		logInternalError(errors.New("cause does not implement StackTracer"), ctx)
 		return nil
 	}
 
-	stack := err.StackTrace()
+	stack := st.StackTrace()
 	rStack := rollbar.Stack(make([]rollbar.Frame, len(stack)))
 
 	var b strings.Builder
