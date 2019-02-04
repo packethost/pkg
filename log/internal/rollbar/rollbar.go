@@ -54,7 +54,7 @@ func (e rError) Error() string {
 }
 
 func (e rError) Cause() error {
-	return errors.Cause(error(e.err))
+	return e.err
 }
 
 // logInternalError is a helper to log errors through zap and to rollbar if we run into an error while logging a client's error.
