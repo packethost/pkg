@@ -105,3 +105,8 @@ func (l Logger) With(args ...interface{}) Logger {
 func (l Logger) Package(pkg string) Logger {
 	return Logger{s: l.s.With("pkg", pkg)}
 }
+
+// ZapLogger returns the desugared zap logger
+func (l Logger) ZapLogger() *zap.Logger {
+	return l.s.Desugar()
+}
