@@ -1,4 +1,4 @@
-// package log sets up a shared logger that can be used by all packages run under one binary.
+// Package log sets up a shared logger that can be used by all packages run under one binary.
 //
 // This package wraps zap very lightly so zap best practices apply here too, namely use `With` for KV pairs to add context to a line.
 // The lack of a wide gamut of logging levels is by design.
@@ -15,9 +15,11 @@ package log
 import (
 	"os"
 
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/packethost/pkg/log/internal/rollbar"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -109,4 +111,10 @@ func (l Logger) Package(pkg string) Logger {
 // ZapLogger returns the desugared zap logger
 func (l Logger) ZapLogger() *zap.Logger {
 	return l.s.Desugar()
+}
+
+// GRPCLoggers returns server side logging middleware for gRPC servers
+func (l Logger) GRPCLoggers() (grpc.StreamServerInterceptor, grpc.UnaryServerInterceptor) {
+	logger := l.s.Desugar()
+	return grpc_zap.StreamServerInterceptor(logger), grpc_zap.UnaryServerInterceptor(logger)
 }
