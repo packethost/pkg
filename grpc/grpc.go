@@ -31,5 +31,8 @@ func ConfigFromEnv() (*Config, error) {
 
 // BindAddress constructs a bind address from the Port and BindHost in the Config
 func (c *Config) BindAddress() (string, error) {
+	if c == nil {
+		return "", errors.New("nil config")
+	}
 	return c.Bind + ":" + strconv.Itoa(c.Port), nil
 }

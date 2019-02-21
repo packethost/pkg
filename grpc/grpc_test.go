@@ -33,12 +33,24 @@ func TestConfigFromEnvValid(t *testing.T) {
 }
 
 func TestConfigFromEnvInvalid(t *testing.T) {
-	bindValue := "GRPC_BIND_TEST_VALUE"
-	portValue := "NOT_AN_INT"
-	os.Setenv("GRPC_BIND", bindValue)
-	os.Setenv("GRPC_PORT", portValue)
-	_, err := ConfigFromEnv()
-	if err == nil {
-		t.Fatalf("expected error parsing port value, got: %v", err)
-	}
+	t.Run("BadEnvs", func(t *testing.T) {
+		bindValue := "GRPC_BIND_TEST_VALUE"
+		portValue := "NOT_AN_INT"
+		os.Setenv("GRPC_BIND", bindValue)
+		os.Setenv("GRPC_PORT", portValue)
+		_, err := ConfigFromEnv()
+		if err == nil {
+			t.Fatalf("expected error parsing port value, got: %v", err)
+		}
+	})
+
+	t.Run("UnsetEnvs", func(t *testing.T) {
+		config, err := ConfigFromEnv()
+		if err == nil {
+			t.Fatalf("expected error parsing port value, got: %v", err)
+		}
+		if config != nil {
+			t.Fatalf("expected nil config, got: %v", config)
+		}
+	})
 }
