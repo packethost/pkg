@@ -41,7 +41,7 @@ func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
 		l.Sync()
 	}
 
-	return Logger{s: l.Sugar()}, cleanup, nil
+	return Logger{s: l.Sugar()}.AddCallerSkip(1), cleanup, nil
 }
 
 // Init initializes the logging system and sets the "service" key to the provided argument.
