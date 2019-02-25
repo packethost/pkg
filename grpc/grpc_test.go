@@ -59,15 +59,18 @@ UEbaPdu+CBypOyeoa5tCzDChy8oKWLraPfi9S+BarFlEoIqK2VAHbg==
 	defaultPortValue = 50060
 )
 
-func setDefaultEnvs() {
+func setupEnv(envs map[string]string) {
 	os.Setenv("GRPC_BIND", defaultBindValue)
 	os.Setenv("GRPC_PORT", strconv.Itoa(defaultPortValue))
 	os.Setenv("GRPC_SERVER_CERT", dummyCert)
 	os.Setenv("GRPC_SERVER_KEY", dummyKey)
+	for k, v := range envs {
+		os.Setenv(k, v)
+	}
 }
 
 func TestConfigFromEnvValid(t *testing.T) {
-	setDefaultEnvs()
+	setupEnv(nil)
 
 	config, err := ConfigFromEnv()
 	if err != nil {
@@ -97,7 +100,7 @@ func TestConfigFromEnvValid(t *testing.T) {
 func TestConfigFromEnvInvalid(t *testing.T) {
 
 	t.Run("BadEnvs", func(t *testing.T) {
-		setDefaultEnvs()
+		setupEnv(nil)
 		bindValue := "GRPC_BIND_TEST_VALUE"
 		portValue := "NOT_AN_INT"
 		os.Setenv("GRPC_BIND", bindValue)
@@ -109,7 +112,7 @@ func TestConfigFromEnvInvalid(t *testing.T) {
 	})
 
 	t.Run("UnsetEnvs", func(t *testing.T) {
-		setDefaultEnvs()
+		setupEnv(nil)
 		os.Setenv("GRPC_BIND", "")
 		os.Setenv("GRPC_PORT", "")
 
@@ -123,7 +126,7 @@ func TestConfigFromEnvInvalid(t *testing.T) {
 	})
 
 	t.Run("UnsetCert", func(t *testing.T) {
-		setDefaultEnvs()
+		setupEnv(nil)
 		os.Setenv("GRPC_SERVER_CERT", "")
 		config, err := ConfigFromEnv()
 		if err != nil {
@@ -135,7 +138,7 @@ func TestConfigFromEnvInvalid(t *testing.T) {
 	})
 
 	t.Run("UnsetKey", func(t *testing.T) {
-		setDefaultEnvs()
+		setupEnv(nil)
 		os.Setenv("GRPC_SERVER_KEY", "")
 		config, err := ConfigFromEnv()
 		if err != nil {
@@ -147,7 +150,7 @@ func TestConfigFromEnvInvalid(t *testing.T) {
 	})
 
 	t.Run("BadKey", func(t *testing.T) {
-		setDefaultEnvs()
+		setupEnv(nil)
 		os.Setenv("GRPC_SERVER_KEY", "abc")
 		_, err := ConfigFromEnv()
 		if err == nil {
@@ -156,7 +159,7 @@ func TestConfigFromEnvInvalid(t *testing.T) {
 	})
 
 	t.Run("BadCert", func(t *testing.T) {
-		setDefaultEnvs()
+		setupEnv(nil)
 		os.Setenv("GRPC_SERVER_CERT", "abc")
 		_, err := ConfigFromEnv()
 		if err == nil {
