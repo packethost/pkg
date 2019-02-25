@@ -102,6 +102,13 @@ func (l Logger) With(args ...interface{}) Logger {
 	return Logger{s: l.s.With(args...)}
 }
 
+// AddCallerSkip increases the number of callers skipped by caller annotation.
+// When building wrappers around the Logger, supplying this option prevents Logger from always reporting the wrapper code as the caller.
+func (l Logger) AddCallerSkip(skip int) Logger {
+	s := l.s.Desugar().WithOptions(zap.AddCallerSkip(skip)).Sugar()
+	return Logger{s}
+}
+
 // Package returns a copy of the logger with the "pkg" set to the argument.
 // It should be called before the original Logger has had any keys set to values, otherwise confusion may ensue.
 func (l Logger) Package(pkg string) Logger {
