@@ -7,7 +7,7 @@ workspace:
 pipeline:
   lint:
     group: ci
-    image: golang:1.10-alpine
+    image: golang:1.12-alpine
     commands:
       - apk add --update --upgrade --no-cache git
       - go get -v -u github.com/alecthomas/gometalinter
@@ -17,7 +17,7 @@ pipeline:
 
   test:
     group: ci
-    image: golang:1.11.1
+    image: golang:1.12
     commands:
       - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
