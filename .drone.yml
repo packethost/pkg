@@ -21,6 +21,22 @@ pipeline:
     commands:
       - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
+  build:
+    group: ci
+    image: golang:1.12-alpine
+    commands:
+      - CGO_ENABLED=0 go build ./cmd/...
+
+  examplelog:
+    group: examples
+    image: alpine
+    commands:
+      - ./examplelog
+    environment:
+      PACKET_ENV: ci
+      PACKET_VERSION: "0"
+    secrets: [rollbar_token]
+
   codecov:
     group: notifications
     image: plugins/codecov
