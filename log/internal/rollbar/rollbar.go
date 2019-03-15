@@ -46,7 +46,8 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 // rError exists to implement rollbar.CauseStacker so that rollbar can have stack info.
 // see https://github.com/rollbar/rollbar-go/blob/v1.0.2/doc.go#L64
 type rError struct {
-	err error
+	service string
+	err     error
 }
 
 func (e rError) Error() string {
@@ -76,6 +77,16 @@ func logInternalError(err error, ctx map[string]interface{}) {
 	rollbar.ErrorWithStackSkipWithExtras(rollbar.ERR, err, 1, ctx)
 }
 
+// shortenFilePath removes un-needed information from the source file path.
+// This makes them shorter in Rollbar UI as well as making them the same, regardless of the machine the code was compiled on.
+func shortenFilePath(service, s string) string {
+	idx := strings.Index(s, service)
+	if idx != -1 {
+		return s[idx:]
+	}
+	return s
+}
+
 // Stack converts a github.com/pkg/errors Error stack into a rollbar stack
 func (e rError) Stack() rollbar.Stack {
 	type stackTracer interface {
@@ -98,7 +109,9 @@ func (e rError) Stack() rollbar.Stack {
 	for i := range stack {
 		b.Reset()
 		fmt.Fprintf(&b, "%+s", stack[i])
-		n, err := fmt.Sscanf(b.String(), "%s\n\t%s", &rStack[i].Method, &rStack[i].Filename)
+		var filename string
+		n, err := fmt.Sscanf(b.String(), "%s\n\t%s", &rStack[i].Method, &filename)
+		rStack[i].Filename = shortenFilePath(e.service, filename)
 
 		if err != nil {
 			ctx["lineString"] = b.String()
@@ -131,7 +144,7 @@ func (e rError) Stack() rollbar.Stack {
 	return rStack
 }
 
-func Notify(err error, args ...interface{}) {
-	rErr := rError{err: err}
+func Notify(service string, err error, args ...interface{}) {
+	rErr := rError{service: service, err: err}
 	rollbar.Error(rErr)
 }
