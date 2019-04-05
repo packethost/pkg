@@ -92,14 +92,29 @@ func (e rError) Stack() rollbar.Stack {
 	type stackTracer interface {
 		StackTrace() errors.StackTrace
 	}
+	type causer interface {
+		Cause() error
+	}
 	ctx := map[string]interface{}{}
 
-	cause := e.Cause()
-	st, ok := cause.(stackTracer)
-	if !ok {
-		ctx["cause"] = cause
-		logInternalError(errors.New("cause does not implement StackTracer"), ctx)
-		return nil
+	err := e.Cause()
+	var st stackTracer
+	var ok bool
+	// try to find if there's a stackTracer in the stack of errors
+	// WithMessage does not add a stack so New->WithMessage->WM->...->WM means we need to unwrap until we get to the
+	// New'd one.
+	for {
+		st, ok = err.(stackTracer)
+		if ok {
+			break
+		}
+		cause, ok := err.(causer)
+		if !ok {
+			ctx["cause"] = e.Cause()
+			logInternalError(errors.New("cause does not implement StackTracer"), ctx)
+			return nil
+		}
+		err = cause.Cause()
 	}
 
 	stack := st.StackTrace()

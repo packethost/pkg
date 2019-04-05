@@ -65,7 +65,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:adccce69c151272d5053505aee552c6a1ac4e7bf6d18f0206ed7453187f6284d"
+  digest = "1:29f5757129c68d0f5c3ee78bf7ff2967259c52798a494fea010b1bfa83324f92"
   name = "go.uber.org/zap"
   packages = [
     ".",
@@ -73,7 +73,9 @@
     "internal/bufferpool",
     "internal/color",
     "internal/exit",
+    "internal/ztest",
     "zapcore",
+    "zaptest",
     "zaptest/observer",
   ]
   pruneopts = "UT"
@@ -184,6 +186,7 @@
     "github.com/rollbar/rollbar-go",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
+    "go.uber.org/zap/zaptest",
     "go.uber.org/zap/zaptest/observer",
     "google.golang.org/grpc",
   ]
