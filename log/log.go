@@ -29,7 +29,8 @@ var (
 
 // Logger is a wrapper around zap.SugaredLogger
 type Logger struct {
-	s *zap.SugaredLogger
+	service string
+	s       *zap.SugaredLogger
 }
 
 func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
@@ -41,7 +42,7 @@ func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
 		l.Sync()
 	}
 
-	return Logger{s: l.Sugar()}.AddCallerSkip(1), cleanup, nil
+	return Logger{service: service, s: l.Sugar()}.AddCallerSkip(1), cleanup, nil
 }
 
 // Init initializes the logging system and sets the "service" key to the provided argument.
@@ -76,7 +77,7 @@ func Init(service string) (Logger, func(), error) {
 // All the values of arg are stringified and concatenated without any strings.
 // If no args are provided err.Error() is used as the log message.
 func (l Logger) Error(err error, args ...interface{}) {
-	rollbar.Notify(err, args)
+	rollbar.Notify(l.service, err, args)
 	if len(args) == 0 {
 		args = append(args, err)
 	}
@@ -99,20 +100,20 @@ func (l Logger) Debug(args ...interface{}) {
 
 // With is used to add context to the logger, a new logger copy with the new K=V pairs as context is returned.
 func (l Logger) With(args ...interface{}) Logger {
-	return Logger{s: l.s.With(args...)}
+	return Logger{service: l.service, s: l.s.With(args...)}
 }
 
 // AddCallerSkip increases the number of callers skipped by caller annotation.
 // When building wrappers around the Logger, supplying this option prevents Logger from always reporting the wrapper code as the caller.
 func (l Logger) AddCallerSkip(skip int) Logger {
 	s := l.s.Desugar().WithOptions(zap.AddCallerSkip(skip)).Sugar()
-	return Logger{s}
+	return Logger{service: l.service, s: s}
 }
 
 // Package returns a copy of the logger with the "pkg" set to the argument.
 // It should be called before the original Logger has had any keys set to values, otherwise confusion may ensue.
 func (l Logger) Package(pkg string) Logger {
-	return Logger{s: l.s.With("pkg", pkg)}
+	return Logger{service: l.service, s: l.s.With("pkg", pkg)}
 }
 
 // GRPCLoggers returns server side logging middleware for gRPC servers

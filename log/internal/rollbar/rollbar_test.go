@@ -1,11 +1,14 @@
 package rollbar
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
 	"github.com/pkg/errors"
 	rollbar "github.com/rollbar/rollbar-go"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestStack(t *testing.T) {
@@ -34,6 +37,8 @@ func TestStack(t *testing.T) {
 			want.Line -= 1 // account for calling runtime.Callers on line after errors.New
 		}
 
+		t.Logf("want: method=%v %v:%v", want.Function, want.File, want.Line)
+		t.Logf(" got: method=%v %v:%v", got.Method, got.Filename, got.Line)
 		if want.File != got.Filename {
 			t.Fatalf("filename mismatch: i=%d\nwant=%s\n got=%s\n", i, want.File, got.Filename)
 		}
@@ -68,5 +73,23 @@ func TestCause(t *testing.T) {
 	rErr := rError{err: err}
 	if rErr.Cause() != err {
 		t.Fatalf("Cause() mismatch:\nwant=%v\n got=%v\n", err, rErr.Cause())
+	}
+}
+
+func TestPkgErrorsCompat(t *testing.T) {
+	log = zaptest.NewLogger(t, zaptest.Level(zap.WarnLevel)).Sugar()
+	for _, err := range []error{
+		errors.Errorf("Errorf"),
+		errors.New("New"),
+		errors.WithMessage(errors.New("New"), "WithMessage errors.New"),
+		errors.WithStack(fmt.Errorf("fmt.Errorf")),
+		errors.WithStack(errors.New("New")),
+		errors.Wrap(fmt.Errorf("fmt.Errorf"), "Wrap fmt.Errrof"),
+		errors.Wrap(errors.New("New"), "Wrap errors.New"),
+	} {
+		rErr := rError{err: err}
+		if rErr.Stack() == nil {
+			t.Fatalf("expected err to implement stackTracer but does not: %v", err)
+		}
 	}
 }

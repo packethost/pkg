@@ -7,7 +7,7 @@ workspace:
 pipeline:
   lint:
     group: ci
-    image: golang:1.10-alpine
+    image: golang:1.12-alpine
     commands:
       - apk add --update --upgrade --no-cache git
       - go get -v -u github.com/alecthomas/gometalinter
@@ -17,9 +17,25 @@ pipeline:
 
   test:
     group: ci
-    image: golang:1.11.1
+    image: golang:1.12
     commands:
       - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+  build:
+    group: ci
+    image: golang:1.12-alpine
+    commands:
+      - CGO_ENABLED=0 go build ./cmd/...
+
+  examplelog:
+    group: examples
+    image: alpine
+    commands:
+      - ./examplelog
+    environment:
+      PACKET_ENV: ci
+      PACKET_VERSION: "0"
+    secrets: [rollbar_token]
 
   codecov:
     group: notifications
