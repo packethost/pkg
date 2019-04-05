@@ -37,6 +37,8 @@ func TestStack(t *testing.T) {
 			want.Line -= 1 // account for calling runtime.Callers on line after errors.New
 		}
 
+		t.Logf("want: method=%v %v:%v", want.Function, want.File, want.Line)
+		t.Logf(" got: method=%v %v:%v", got.Method, got.Filename, got.Line)
 		if want.File != got.Filename {
 			t.Fatalf("filename mismatch: i=%d\nwant=%s\n got=%s\n", i, want.File, got.Filename)
 		}

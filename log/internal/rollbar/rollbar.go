@@ -3,6 +3,7 @@ package rollbar
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -120,40 +121,18 @@ func (e rError) Stack() rollbar.Stack {
 	stack := st.StackTrace()
 	rStack := rollbar.Stack(make([]rollbar.Frame, len(stack)))
 
-	var b strings.Builder
-	for i := range stack {
-		b.Reset()
-		fmt.Fprintf(&b, "%+s", stack[i])
-		var filename string
-		n, err := fmt.Sscanf(b.String(), "%s\n\t%s", &rStack[i].Method, &filename)
-		rStack[i].Filename = shortenFilePath(e.service, filename)
+	for i, frame := range stack {
+		// From pkg/error's docs
+		//
+		// Frame represents a program counter inside a stack frame.
+		// For historical reasons if Frame is interpreted as a uintptr
+		// its value represents the program counter + 1.
+		// type Frame uintptr
+		frame -= 1
 
-		if err != nil {
-			ctx["lineString"] = b.String()
-			logInternalError(errors.Wrap(err, "failed to scan stack frame"), ctx)
-			return nil
-		}
-		if n != 2 {
-			ctx["lineString"] = b.String()
-			ctx["count"] = n
-			logInternalError(errors.Wrap(err, "unexpected number of values scanned when scanning for stack frame func and file names"), ctx)
-			return nil
-		}
-
-		b.Reset()
-		fmt.Fprintf(&b, "%d", stack[i])
-		n, err = fmt.Sscanf(b.String(), "%d", &rStack[i].Line)
-		if err != nil {
-			ctx["lineString"] = b.String()
-			logInternalError(errors.Wrap(err, "failed to scan stack frame line number"), ctx)
-			return nil
-		}
-		if n != 1 {
-			ctx["lineString"] = b.String()
-			ctx["count"] = n
-			logInternalError(errors.Wrap(err, "unexpected number of values scanned when scanning for stack frame line number"), ctx)
-			return nil
-		}
+		f := runtime.FuncForPC(uintptr(frame))
+		rStack[i].Method = f.Name()
+		rStack[i].Filename, rStack[i].Line = f.FileLine(uintptr(frame))
 	}
 
 	return rStack
