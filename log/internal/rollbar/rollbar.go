@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/pkg/errors"
 	rollbar "github.com/rollbar/rollbar-go"
@@ -33,7 +32,7 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 		log.Panicw("required envvar is unset", "envvar", "PACKET_VERSION")
 	}
 	rollbar.SetCodeVersion(v)
-	rollbar.SetServerRoot(service)
+	rollbar.SetServerRoot("/" + service)
 
 	enable := true
 	if os.Getenv("ROLLBAR_DISABLE") != "" {
@@ -47,8 +46,7 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 // rError exists to implement rollbar.CauseStacker so that rollbar can have stack info.
 // see https://github.com/rollbar/rollbar-go/blob/v1.0.2/doc.go#L64
 type rError struct {
-	service string
-	err     error
+	err error
 }
 
 func (e rError) Error() string {
@@ -76,16 +74,6 @@ func logInternalError(err error, ctx map[string]interface{}) {
 	l.Error(err)
 	// 1 level of stack frames are skipped, because we don't want care to have logInternalError show up
 	rollbar.ErrorWithStackSkipWithExtras(rollbar.ERR, err, 1, ctx)
-}
-
-// shortenFilePath removes un-needed information from the source file path.
-// This makes them shorter in Rollbar UI as well as making them the same, regardless of the machine the code was compiled on.
-func shortenFilePath(service, s string) string {
-	idx := strings.Index(s, service)
-	if idx != -1 {
-		return s[idx:]
-	}
-	return s
 }
 
 // Stack converts a github.com/pkg/errors Error stack into a rollbar stack
@@ -138,7 +126,7 @@ func (e rError) Stack() rollbar.Stack {
 	return rStack
 }
 
-func Notify(service string, err error, args ...interface{}) {
-	rErr := rError{service: service, err: err}
+func Notify(err error, args ...interface{}) {
+	rErr := rError{err: err}
 	rollbar.Error(rErr)
 }

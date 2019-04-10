@@ -77,7 +77,7 @@ func Init(service string) (Logger, func(), error) {
 // All the values of arg are stringified and concatenated without any strings.
 // If no args are provided err.Error() is used as the log message.
 func (l Logger) Error(err error, args ...interface{}) {
-	rollbar.Notify(l.service, err, args)
+	rollbar.Notify(err, args)
 	if len(args) == 0 {
 		args = append(args, err)
 	}
