@@ -46,8 +46,7 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 // rError exists to implement rollbar.CauseStacker so that rollbar can have stack info.
 // see https://github.com/rollbar/rollbar-go/blob/v1.0.2/doc.go#L64
 type rError struct {
-	service string
-	err     error
+	err error
 }
 
 func (e rError) Error() string {
@@ -127,7 +126,7 @@ func (e rError) Stack() rollbar.Stack {
 	return rStack
 }
 
-func Notify(service string, err error, args ...interface{}) {
-	rErr := rError{service: service, err: err}
+func Notify(err error, args ...interface{}) {
+	rErr := rError{err: err}
 	rollbar.Error(rErr)
 }
