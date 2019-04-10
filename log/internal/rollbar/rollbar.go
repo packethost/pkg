@@ -33,7 +33,7 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 		log.Panicw("required envvar is unset", "envvar", "PACKET_VERSION")
 	}
 	rollbar.SetCodeVersion(v)
-	rollbar.SetServerRoot(service)
+	rollbar.SetServerRoot("/" + service)
 
 	enable := true
 	if os.Getenv("ROLLBAR_DISABLE") != "" {
