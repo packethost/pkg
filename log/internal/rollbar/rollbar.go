@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/pkg/errors"
 	rollbar "github.com/rollbar/rollbar-go"
@@ -76,16 +75,6 @@ func logInternalError(err error, ctx map[string]interface{}) {
 	l.Error(err)
 	// 1 level of stack frames are skipped, because we don't want care to have logInternalError show up
 	rollbar.ErrorWithStackSkipWithExtras(rollbar.ERR, err, 1, ctx)
-}
-
-// shortenFilePath removes un-needed information from the source file path.
-// This makes them shorter in Rollbar UI as well as making them the same, regardless of the machine the code was compiled on.
-func shortenFilePath(service, s string) string {
-	idx := strings.Index(s, service)
-	if idx != -1 {
-		return s[idx:]
-	}
-	return s
 }
 
 // Stack converts a github.com/pkg/errors Error stack into a rollbar stack
