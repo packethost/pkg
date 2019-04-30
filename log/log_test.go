@@ -10,12 +10,16 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-func TestLogging(t *testing.T) {
+func TestMain(m *testing.M) {
+	os.Setenv("LOG_DISCARD_LOGS", "true")
 	os.Setenv("ROLLBAR_TOKEN", "foo")
 	os.Setenv("PACKET_ENV", "test")
 	os.Setenv("PACKET_VERSION", "1")
 	os.Setenv("ROLLBAR_DISABLE", "1")
+	os.Exit(m.Run())
+}
 
+func TestLogging(t *testing.T) {
 	errorMessage := "the flobnarm overheated"
 	tests := []struct {
 		level    zapcore.Level
@@ -86,11 +90,6 @@ func TestLogging(t *testing.T) {
 }
 
 func TestContext(t *testing.T) {
-	os.Setenv("ROLLBAR_TOKEN", "foo")
-	os.Setenv("PACKET_ENV", "test")
-	os.Setenv("PACKET_VERSION", "1")
-	os.Setenv("ROLLBAR_DISABLE", "1")
-
 	enabler := zap.NewAtomicLevelAt(zap.InfoLevel)
 	core, logs := observer.New(enabler)
 
@@ -168,11 +167,6 @@ func TestContext(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
-	os.Setenv("LOG_DISCARD_LOGS", "true")
-	os.Setenv("ROLLBAR_TOKEN", "foo")
-	os.Setenv("PACKET_ENV", "test")
-	os.Setenv("PACKET_VERSION", "1")
-	os.Setenv("ROLLBAR_DISABLE", "1")
 	Init("non-debug")
 
 	os.Setenv("DEBUG", "1")
