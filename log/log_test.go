@@ -186,3 +186,40 @@ func TestInit(t *testing.T) {
 	}
 
 }
+
+func TestFatal(t *testing.T) {
+	enabler := zap.NewAtomicLevelAt(zap.InfoLevel)
+	core, logs := observer.New(enabler)
+
+	logger, clean, _ := configureLogger(zap.New(core), "TestFatal")
+	defer clean()
+
+	msg := "an error"
+	want := fmt.Errorf(msg)
+	defer func() {
+		iface := recover()
+		if iface == nil {
+			t.Fatal("expected a non-nil return from recover()")
+		}
+		err, ok := iface.(error)
+		if !ok {
+			t.Fatalf("unexpected return from recover() want: error, got:%T", iface)
+		}
+		if err != want {
+			t.Fatalf("error mismatch, want: %v, got: %v", want, err)
+		}
+		if logs.Len() != 1 {
+			t.Fatalf("log message mismatch, want: %v, got: %v", 1, logs.Len())
+		}
+		log := logs.All()[0]
+		level := zapcore.ErrorLevel
+		if log.Level != level {
+			t.Fatalf("log level mismatch want: %v, got: %v", level, log.Level)
+		}
+		if log.Message != msg {
+			t.Fatalf("log message mismatch want: %s, got: %s", msg, log.Message)
+		}
+	}()
+	logger.Fatal(want)
+	t.Fatal("should have panic'ed before getting here")
+}

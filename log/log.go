@@ -84,6 +84,12 @@ func (l Logger) Error(err error, args ...interface{}) {
 	l.s.With("error", err).Error(args...)
 }
 
+// Fatal calls Error followed by a panic(err)
+func (l Logger) Fatal(err error, args ...interface{}) {
+	l.Error(err, args...)
+	panic(err)
+}
+
 // Info is used to log message in production, only simple strings should be given in the args.
 // Context should be added as K=V pairs using the `With` method.
 // All the values of arg are stringified and concatenated without any strings.
