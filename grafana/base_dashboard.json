@@ -27,7 +27,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "prometheus.ewr1.packet.rocks",
+      "datasource": "Hosted Prometheus",
       "decimals": 2,
       "format": "bytes",
       "gauge": {
@@ -108,7 +108,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus.ewr1.packet.rocks",
+      "datasource": "Hosted Prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -141,7 +141,7 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "\ngin_requests_total{service=\"packet-invoice-production-internal-http\",url!=\"/_packet/healthcheck\",url!=\"/\",url!=\"/favicon.ico\"}\n",
+          "expr": "\ngin_requests_total{service=\"packet-invoice-production-internal-http\",url!=\"/_packet/healthcheck\",url!=\"/\",url!=\"/favicon.ico\"}\n\n",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -201,7 +201,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "prometheus.ewr1.packet.rocks",
+      "datasource": "Hosted Prometheus",
       "decimals": 2,
       "format": "bytes",
       "gauge": {
@@ -282,7 +282,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus.ewr1.packet.rocks",
+      "datasource": "Hosted Prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -315,7 +315,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "gin_request_duration_seconds_count{service=\"packet-invoice-production-internal-http\"}\n",
+          "expr": "rate(gin_request_duration_seconds_count{service=\"packet-invoice-production-internal-http\"}[5m])\n\n",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -368,7 +368,7 @@
     },
     {
       "cacheTimeout": null,
-      "datasource": "prometheus.ewr1.packet.rocks",
+      "datasource": "Hosted Prometheus",
       "description": "Total user and system CPU time spent in seconds",
       "gridPos": {
         "h": 4,
@@ -430,7 +430,7 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -459,7 +459,6 @@
     ]
   },
   "timezone": "",
-  "title": "Mo Money",
-  "uid": "q0F8LSMWk",
-  "version": 16
+  "title": "DEFINE TITLE",
+  "version": 1
 }
