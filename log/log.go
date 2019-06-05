@@ -33,21 +33,7 @@ type Logger struct {
 	s       *zap.SugaredLogger
 }
 
-func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
-	l = l.With(zap.String("service", service))
-
-	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
-	cleanup := func() {
-		rollbarClean()
-		l.Sync()
-	}
-
-	return Logger{service: service, s: l.Sugar()}.AddCallerSkip(1), cleanup, nil
-}
-
-// Init initializes the logging system and sets the "service" key to the provided argument.
-// This func should only be called once and after flag.Parse() has been called otherwise leveled logging will not be configured correctly.
-func Init(service string) (Logger, func(), error) {
+func setupConfig(service string) zap.Config {
 	var config zap.Config
 	if os.Getenv("DEBUG") != "" {
 		config = zap.NewDevelopmentConfig()
@@ -64,10 +50,36 @@ func Init(service string) (Logger, func(), error) {
 	}
 
 	config.Level = zap.NewAtomicLevelAt(*logLevel)
+	return config
+}
 
-	l, err := config.Build()
+func buildConfig(c zap.Config) (*zap.Logger, error) {
+	l, err := c.Build()
 	if err != nil {
-		return Logger{}, nil, errors.Wrap(err, "failed to build logger config")
+		return nil, errors.Wrap(err, "failed to build logger config")
+	}
+	return l, nil
+}
+
+func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
+	l = l.With(zap.String("service", service))
+
+	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
+	cleanup := func() {
+		rollbarClean()
+		l.Sync()
+	}
+
+	return Logger{service: service, s: l.Sugar()}.AddCallerSkip(1), cleanup, nil
+}
+
+// Init initializes the logging system and sets the "service" key to the provided argument.
+// This func should only be called once and after flag.Parse() has been called otherwise leveled logging will not be configured correctly.
+func Init(service string) (Logger, func(), error) {
+	config := setupConfig(service)
+	l, err := buildConfig(config)
+	if err != nil {
+		return Logger{}, nil, err
 	}
 
 	return configureLogger(l, service)
