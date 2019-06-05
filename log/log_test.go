@@ -170,6 +170,7 @@ func TestInit(t *testing.T) {
 	Init("non-debug")
 
 	os.Setenv("DEBUG", "1")
+	defer os.Unsetenv("DEBUG")
 	Init("debug")
 
 	for _, env := range []string{"ROLLBAR_TOKEN", "PACKET_ENV", "PACKET_VERSION"} {
