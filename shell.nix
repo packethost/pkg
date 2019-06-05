@@ -2,17 +2,16 @@ let
   _pkgs = import <nixpkgs> {};
 in
 { pkgs ? import (_pkgs.fetchFromGitHub { owner = "NixOS";
-                                         repo = "nixpkgs";
-                                         rev = "18.09";
-                                         sha256 = "1ib96has10v5nr6bzf7v8kw7yzww8zanxgw2qi1ll1sbv6kj6zpd";
+                                         repo = "nixpkgs-channels";
+                                         # nixos-unstable @2019-05-06
+                                         rev = "2ec5e9595becf05b052ce4c61a05d87ce95d19af";
+                                         sha256 = "1z9ajsff9iv0n70aa4ss5nqi21m8fvs27g88lyjbh43wgjbrc2sy";
                                        }) {}
 }:
 
 with pkgs;
 
-stdenv.mkDerivation rec {
-  name = "pkg";
-  env = buildEnv { name = name; paths = buildInputs; };
+mkShell {
   buildInputs = [
     dep
     go
