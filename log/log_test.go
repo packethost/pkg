@@ -224,3 +224,91 @@ func TestFatal(t *testing.T) {
 	logger.Fatal(want)
 	t.Fatal("should have panic'ed before getting here")
 }
+
+func setupForExamples(example string) (Logger, func()) {
+	service := "github.com/packethost/pkg"
+	c := setupConfig(service)
+	c.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	c.OutputPaths = []string{"stdout"}
+	c.ErrorOutputPaths = c.OutputPaths
+	c.EncoderConfig.TimeKey = ""
+	z, err := buildConfig(c)
+	if err != nil {
+		panic(err)
+	}
+	logger, cleanup, err := configureLogger(z, service)
+	if err != nil {
+		panic(err)
+	}
+
+	l := logger.Package(example)
+	return l, cleanup
+}
+
+func ExampleLogger_Debug() {
+	l, cleanup := setupForExamples("debug")
+	defer cleanup()
+
+	l.Debug("debug message")
+	//Output:
+	//{"level":"debug","caller":"log/log_test.go:252","msg":"debug message","service":"github.com/packethost/pkg","pkg":"debug"}
+
+}
+
+func ExampleLogger_Info() {
+	l, cleanup := setupForExamples("info")
+	defer cleanup()
+
+	defer func() {
+		recover()
+	}()
+	l.Info("info message")
+	//Output:
+	//{"level":"info","caller":"log/log_test.go:265","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
+
+}
+
+func ExampleLogger_Error() {
+	l, cleanup := setupForExamples("error")
+	defer cleanup()
+
+	l.Error(fmt.Errorf("oh no an error"))
+	//Output:
+	//{"level":"error","caller":"log/log_test.go:275","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"error","error":"oh no an error"}
+
+}
+
+func ExampleLogger_Fatal() {
+	l, cleanup := setupForExamples("fatal")
+	defer cleanup()
+
+	defer func() {
+		recover()
+	}()
+	l.Fatal(fmt.Errorf("oh no an error"))
+	//Output:
+	//{"level":"error","caller":"log/log.go:101","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"fatal","error":"oh no an error"}
+
+}
+
+func ExampleLogger_With() {
+	l, cleanup := setupForExamples("with")
+	defer cleanup()
+
+	l.With("true", true).Info("info message")
+	//Output:
+	//{"level":"info","caller":"log/log_test.go:298","msg":"info message","service":"github.com/packethost/pkg","pkg":"with","true":true}
+
+}
+
+func ExampleLogger_Package() {
+	l, cleanup := setupForExamples("info")
+	defer cleanup()
+
+	l.Info("info message")
+	l = l.Package("package")
+	l.Info("info message")
+	//Output:
+	//{"level":"info","caller":"log/log_test.go:308","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
+	//{"level":"info","caller":"log/log_test.go:310","msg":"info message","service":"github.com/packethost/pkg","pkg":"info","pkg":"package"}
+}
