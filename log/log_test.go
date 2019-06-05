@@ -287,7 +287,7 @@ func ExampleLogger_Fatal() {
 	}()
 	l.Fatal(fmt.Errorf("oh no an error"))
 	//Output:
-	//{"level":"error","caller":"log/log.go:101","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"fatal","error":"oh no an error"}
+	//{"level":"error","caller":"log/log_test.go:288","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"fatal","error":"oh no an error"}
 
 }
 

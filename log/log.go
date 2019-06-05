@@ -98,7 +98,7 @@ func (l Logger) Error(err error, args ...interface{}) {
 
 // Fatal calls Error followed by a panic(err)
 func (l Logger) Fatal(err error, args ...interface{}) {
-	l.Error(err, args...)
+	l.AddCallerSkip(1).Error(err, args...)
 	panic(err)
 }
 
