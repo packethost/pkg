@@ -31,6 +31,7 @@ var (
 type Logger struct {
 	service string
 	s       *zap.SugaredLogger
+	cleanup func()
 }
 
 func setupConfig(service string) zap.Config {
@@ -61,7 +62,7 @@ func buildConfig(c zap.Config) (*zap.Logger, error) {
 	return l, nil
 }
 
-func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
+func configureLogger(l *zap.Logger, service string) (Logger, error) {
 	l = l.With(zap.String("service", service))
 
 	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
@@ -70,19 +71,28 @@ func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
 		l.Sync()
 	}
 
-	return Logger{service: service, s: l.Sugar()}.AddCallerSkip(1), cleanup, nil
+	return Logger{service: service, s: l.Sugar(), cleanup: cleanup}.AddCallerSkip(1), nil
 }
 
 // Init initializes the logging system and sets the "service" key to the provided argument.
 // This func should only be called once and after flag.Parse() has been called otherwise leveled logging will not be configured correctly.
-func Init(service string) (Logger, func(), error) {
+func Init(service string) (Logger, error) {
 	config := setupConfig(service)
 	l, err := buildConfig(config)
 	if err != nil {
-		return Logger{}, nil, err
+		return Logger{}, err
 	}
 
 	return configureLogger(l, service)
+
+}
+
+// Close finishes and flushes up any in-flight logs
+func (l Logger) Close() {
+	if l.cleanup == nil {
+		return
+	}
+	l.cleanup()
 }
 
 // Error is used to log an error, the error will be forwared to rollbar and/or other external services.
@@ -118,20 +128,20 @@ func (l Logger) Debug(args ...interface{}) {
 
 // With is used to add context to the logger, a new logger copy with the new K=V pairs as context is returned.
 func (l Logger) With(args ...interface{}) Logger {
-	return Logger{service: l.service, s: l.s.With(args...)}
+	return Logger{service: l.service, s: l.s.With(args...), cleanup: l.cleanup}
 }
 
 // AddCallerSkip increases the number of callers skipped by caller annotation.
 // When building wrappers around the Logger, supplying this option prevents Logger from always reporting the wrapper code as the caller.
 func (l Logger) AddCallerSkip(skip int) Logger {
 	s := l.s.Desugar().WithOptions(zap.AddCallerSkip(skip)).Sugar()
-	return Logger{service: l.service, s: s}
+	return Logger{service: l.service, s: s, cleanup: l.cleanup}
 }
 
 // Package returns a copy of the logger with the "pkg" set to the argument.
 // It should be called before the original Logger has had any keys set to values, otherwise confusion may ensue.
 func (l Logger) Package(pkg string) Logger {
-	return Logger{service: l.service, s: l.s.With("pkg", pkg)}
+	return Logger{service: l.service, s: l.s.With("pkg", pkg), cleanup: l.cleanup}
 }
 
 // GRPCLoggers returns server side logging middleware for gRPC servers
