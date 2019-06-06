@@ -19,6 +19,7 @@ import (
 	"github.com/packethost/pkg/log/internal/rollbar"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc"
 )
 
@@ -85,6 +86,12 @@ func Init(service string) (Logger, error) {
 
 	return configureLogger(l, service)
 
+}
+
+// Test returns a logger that does not log to rollbar and can be used with testing.TB to only log on test failure or run with -v
+func Test(t zaptest.TestingT, service string) Logger {
+	l := zaptest.NewLogger(t)
+	return Logger{service: service, s: l.Sugar(), cleanup: func() { l.Sync() }}.AddCallerSkip(1).Package(t.Name())
 }
 
 // Close finishes and flushes up any in-flight logs
