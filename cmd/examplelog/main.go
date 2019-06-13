@@ -12,7 +12,7 @@ func helpfulWrapper(l log.Logger, message string) {
 }
 
 func main() {
-	l, cleanup, err := log.Init("github.com/packethost/pkg")
+	l, err := log.Init("github.com/packethost/pkg")
 	if err != nil {
 		panic(err)
 	}
@@ -26,5 +26,5 @@ func main() {
 	ll.Error(err, "this is an actual error! Will even go to rollbar where we can ignore it or not")
 
 	helpfulWrapper(ll, "this is being called via helpfulWrapper")
-	cleanup()
+	l.Close()
 }

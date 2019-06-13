@@ -36,8 +36,8 @@ func TestLogging(t *testing.T) {
 			core, logs := observer.New(enabler)
 
 			service := fmt.Sprintf("testing-%v", tt.level)
-			logger, clean, err := configureLogger(zap.New(core), service)
-			defer clean()
+			logger, err := configureLogger(zap.New(core), service)
+			defer logger.Close()
 
 			if err != nil {
 				t.Fatal(err)
@@ -94,8 +94,8 @@ func TestContext(t *testing.T) {
 	core, logs := observer.New(enabler)
 
 	service := fmt.Sprintf("testing-%v", zap.InfoLevel)
-	logger1, clean, err := configureLogger(zap.New(core), service)
-	defer clean()
+	logger1, err := configureLogger(zap.New(core), service)
+	defer logger1.Close()
 
 	if err != nil {
 		t.Fatal(err)
@@ -192,8 +192,8 @@ func TestFatal(t *testing.T) {
 	enabler := zap.NewAtomicLevelAt(zap.InfoLevel)
 	core, logs := observer.New(enabler)
 
-	logger, clean, _ := configureLogger(zap.New(core), "TestFatal")
-	defer clean()
+	logger, _ := configureLogger(zap.New(core), "TestFatal")
+	defer logger.Close()
 
 	msg := "an error"
 	want := fmt.Errorf(msg)
@@ -225,7 +225,7 @@ func TestFatal(t *testing.T) {
 	t.Fatal("should have panic'ed before getting here")
 }
 
-func setupForExamples(example string) (Logger, func()) {
+func setupForExamples(example string) Logger {
 	service := "github.com/packethost/pkg"
 	c := setupConfig(service)
 	c.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
@@ -236,18 +236,18 @@ func setupForExamples(example string) (Logger, func()) {
 	if err != nil {
 		panic(err)
 	}
-	logger, cleanup, err := configureLogger(z, service)
+	logger, err := configureLogger(z, service)
 	if err != nil {
 		panic(err)
 	}
 
 	l := logger.Package(example)
-	return l, cleanup
+	return l
 }
 
 func ExampleLogger_Debug() {
-	l, cleanup := setupForExamples("debug")
-	defer cleanup()
+	l := setupForExamples("debug")
+	defer l.Close()
 
 	l.Debug("debug message")
 	//Output:
@@ -256,8 +256,8 @@ func ExampleLogger_Debug() {
 }
 
 func ExampleLogger_Info() {
-	l, cleanup := setupForExamples("info")
-	defer cleanup()
+	l := setupForExamples("info")
+	defer l.Close()
 
 	defer func() {
 		recover()
@@ -269,8 +269,8 @@ func ExampleLogger_Info() {
 }
 
 func ExampleLogger_Error() {
-	l, cleanup := setupForExamples("error")
-	defer cleanup()
+	l := setupForExamples("error")
+	defer l.Close()
 
 	l.Error(fmt.Errorf("oh no an error"))
 	//Output:
@@ -279,8 +279,8 @@ func ExampleLogger_Error() {
 }
 
 func ExampleLogger_Fatal() {
-	l, cleanup := setupForExamples("fatal")
-	defer cleanup()
+	l := setupForExamples("fatal")
+	defer l.Close()
 
 	defer func() {
 		recover()
@@ -292,8 +292,8 @@ func ExampleLogger_Fatal() {
 }
 
 func ExampleLogger_With() {
-	l, cleanup := setupForExamples("with")
-	defer cleanup()
+	l := setupForExamples("with")
+	defer l.Close()
 
 	l.With("true", true).Info("info message")
 	//Output:
@@ -302,8 +302,8 @@ func ExampleLogger_With() {
 }
 
 func ExampleLogger_Package() {
-	l, cleanup := setupForExamples("info")
-	defer cleanup()
+	l := setupForExamples("info")
+	defer l.Close()
 
 	l.Info("info message")
 	l = l.Package("package")
