@@ -1,3 +1,7 @@
+required = [
+  "github.com/avinoamr/godocdown",
+]
+
 [prune]
   go-tests = true
   unused-packages = true
