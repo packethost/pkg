@@ -19,6 +19,7 @@ import (
 	"github.com/packethost/pkg/log/internal/rollbar"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc"
 )
 
@@ -31,23 +32,10 @@ var (
 type Logger struct {
 	service string
 	s       *zap.SugaredLogger
+	cleanup func()
 }
 
-func configureLogger(l *zap.Logger, service string) (Logger, func(), error) {
-	l = l.With(zap.String("service", service))
-
-	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
-	cleanup := func() {
-		rollbarClean()
-		l.Sync()
-	}
-
-	return Logger{service: service, s: l.Sugar()}.AddCallerSkip(1), cleanup, nil
-}
-
-// Init initializes the logging system and sets the "service" key to the provided argument.
-// This func should only be called once and after flag.Parse() has been called otherwise leveled logging will not be configured correctly.
-func Init(service string) (Logger, func(), error) {
+func setupConfig(service string) zap.Config {
 	var config zap.Config
 	if os.Getenv("DEBUG") != "" {
 		config = zap.NewDevelopmentConfig()
@@ -64,13 +52,54 @@ func Init(service string) (Logger, func(), error) {
 	}
 
 	config.Level = zap.NewAtomicLevelAt(*logLevel)
+	return config
+}
 
-	l, err := config.Build()
+func buildConfig(c zap.Config) (*zap.Logger, error) {
+	l, err := c.Build()
 	if err != nil {
-		return Logger{}, nil, errors.Wrap(err, "failed to build logger config")
+		return nil, errors.Wrap(err, "failed to build logger config")
+	}
+	return l, nil
+}
+
+func configureLogger(l *zap.Logger, service string) (Logger, error) {
+	l = l.With(zap.String("service", service))
+
+	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
+	cleanup := func() {
+		rollbarClean()
+		l.Sync()
+	}
+
+	return Logger{service: service, s: l.Sugar(), cleanup: cleanup}.AddCallerSkip(1), nil
+}
+
+// Init initializes the logging system and sets the "service" key to the provided argument.
+// This func should only be called once and after flag.Parse() has been called otherwise leveled logging will not be configured correctly.
+func Init(service string) (Logger, error) {
+	config := setupConfig(service)
+	l, err := buildConfig(config)
+	if err != nil {
+		return Logger{}, err
 	}
 
 	return configureLogger(l, service)
+
+}
+
+// Test returns a logger that does not log to rollbar and can be used with testing.TB to only log on test failure or run with -v
+func Test(t zaptest.TestingT, service string) Logger {
+	l := zaptest.NewLogger(t)
+	return Logger{service: service, s: l.Sugar(), cleanup: func() { l.Sync() }}.AddCallerSkip(1).Package(t.Name())
+}
+
+// Close finishes and flushes up any in-flight logs
+func (l Logger) Close() {
+	if l.cleanup == nil {
+		return
+	}
+	l.cleanup()
 }
 
 // Error is used to log an error, the error will be forwared to rollbar and/or other external services.
@@ -86,7 +115,7 @@ func (l Logger) Error(err error, args ...interface{}) {
 
 // Fatal calls Error followed by a panic(err)
 func (l Logger) Fatal(err error, args ...interface{}) {
-	l.Error(err, args...)
+	l.AddCallerSkip(1).Error(err, args...)
 	panic(err)
 }
 
@@ -106,20 +135,20 @@ func (l Logger) Debug(args ...interface{}) {
 
 // With is used to add context to the logger, a new logger copy with the new K=V pairs as context is returned.
 func (l Logger) With(args ...interface{}) Logger {
-	return Logger{service: l.service, s: l.s.With(args...)}
+	return Logger{service: l.service, s: l.s.With(args...), cleanup: l.cleanup}
 }
 
 // AddCallerSkip increases the number of callers skipped by caller annotation.
 // When building wrappers around the Logger, supplying this option prevents Logger from always reporting the wrapper code as the caller.
 func (l Logger) AddCallerSkip(skip int) Logger {
 	s := l.s.Desugar().WithOptions(zap.AddCallerSkip(skip)).Sugar()
-	return Logger{service: l.service, s: s}
+	return Logger{service: l.service, s: s, cleanup: l.cleanup}
 }
 
 // Package returns a copy of the logger with the "pkg" set to the argument.
 // It should be called before the original Logger has had any keys set to values, otherwise confusion may ensue.
 func (l Logger) Package(pkg string) Logger {
-	return Logger{service: l.service, s: l.s.With("pkg", pkg)}
+	return Logger{service: l.service, s: l.s.With("pkg", pkg), cleanup: l.cleanup}
 }
 
 // GRPCLoggers returns server side logging middleware for gRPC servers
