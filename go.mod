@@ -12,10 +12,10 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd // indirect
+	golang.org/x/net v0.0.0-20190311183353-d8887717615a // indirect
 	golang.org/x/sys v0.0.0-20190221075227-b4e8571b14e0 // indirect
 	google.golang.org/genproto v0.0.0-20190219182410-082222b4a5c5 // indirect
 	google.golang.org/grpc v1.18.0
 )
 
-replace github.com/golang/lint => golang.org/x/lint latest
+replace github.com/golang/lint => golang.org/x/lint v0.0.0-20190409202823-959b441ac422
