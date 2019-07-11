@@ -19,13 +19,13 @@ pipeline:
     group: ci
     image: golang:1.12
     commands:
-      - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      - GO111MODULE=on go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
   build:
     group: ci
     image: golang:1.12-alpine
     commands:
-      - CGO_ENABLED=0 go build ./cmd/...
+      - GO111MODULE=on CGO_ENABLED=0 go build -mod=vendor ./cmd/...
 
   examplelog:
     group: examples
