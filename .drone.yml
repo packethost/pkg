@@ -10,9 +10,8 @@ pipeline:
     image: golang:1.12-alpine
     commands:
       - apk add --update --upgrade --no-cache git
-      - go get -v -u github.com/alecthomas/gometalinter
-      - gometalinter --install
-      - gometalinter --errors --vendor --vendored-linters ./...
+      - GO111MODULE=on go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+      - golangci-lint run --disable-all -E errcheck
       - gofmt -d *.go | (! grep '.')
 
   test:
