@@ -16,5 +16,3 @@ require (
 	google.golang.org/genproto v0.0.0-20190219182410-082222b4a5c5 // indirect
 	google.golang.org/grpc v1.22.0
 )
-
-replace github.com/golang/lint => golang.org/x/lint v0.0.0-20190409202823-959b441ac422
