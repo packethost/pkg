@@ -10,22 +10,21 @@ pipeline:
     image: golang:1.12-alpine
     commands:
       - apk add --update --upgrade --no-cache git
-      - go get -v -u github.com/alecthomas/gometalinter
-      - gometalinter --install
-      - gometalinter --errors --vendor --vendored-linters ./...
-      - gofmt -d *.go | (! grep '.')
+      - GO111MODULE=on go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+      - CGO_ENABLED=0 golangci-lint run --disable-all -E errcheck
+      - gofmt -d . | (! grep '.')
 
   test:
     group: ci
     image: golang:1.12
     commands:
-      - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      - GO111MODULE=on go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
   build:
     group: ci
     image: golang:1.12-alpine
     commands:
-      - CGO_ENABLED=0 go build ./cmd/...
+      - GO111MODULE=on CGO_ENABLED=0 go build -mod=vendor ./cmd/...
 
   examplelog:
     group: examples
