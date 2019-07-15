@@ -11,8 +11,8 @@ pipeline:
     commands:
       - apk add --update --upgrade --no-cache git
       - GO111MODULE=on go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-      - golangci-lint run --disable-all -E errcheck
-      - gofmt -d *.go | (! grep '.')
+      - CGO_ENABLED=0 golangci-lint run --disable-all -E errcheck
+      - gofmt -d . | (! grep '.')
 
   test:
     group: ci

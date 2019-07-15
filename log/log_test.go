@@ -167,11 +167,11 @@ func TestContext(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
-	Init("non-debug")
+	_, _ = Init("non-debug")
 
 	os.Setenv("DEBUG", "1")
 	defer os.Unsetenv("DEBUG")
-	Init("debug")
+	_, _ = Init("debug")
 
 	for _, env := range []string{"ROLLBAR_TOKEN", "PACKET_ENV", "PACKET_VERSION"} {
 		t.Run(env, func(t *testing.T) {
@@ -179,9 +179,9 @@ func TestInit(t *testing.T) {
 			os.Unsetenv(env)
 			defer func() {
 				os.Setenv(env, old)
-				recover()
+				_ = recover()
 			}()
-			Init("should-fail")
+			_, _ = Init("should-fail")
 			t.Fatalf("should not have made it this far")
 		})
 	}
@@ -260,7 +260,7 @@ func ExampleLogger_Info() {
 	defer l.Close()
 
 	defer func() {
-		recover()
+		_ = recover()
 	}()
 	l.Info("info message")
 	//Output:
@@ -283,7 +283,7 @@ func ExampleLogger_Fatal() {
 	defer l.Close()
 
 	defer func() {
-		recover()
+		_ = recover()
 	}()
 	l.Fatal(fmt.Errorf("oh no an error"))
 	//Output:

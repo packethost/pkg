@@ -69,7 +69,7 @@ func configureLogger(l *zap.Logger, service string) (Logger, error) {
 	rollbarClean := rollbar.Setup(l.Sugar().With("pkg", "log"), service)
 	cleanup := func() {
 		rollbarClean()
-		l.Sync()
+		_ = l.Sync()
 	}
 
 	return Logger{service: service, s: l.Sugar(), cleanup: cleanup}.AddCallerSkip(1), nil
@@ -91,7 +91,7 @@ func Init(service string) (Logger, error) {
 // Test returns a logger that does not log to rollbar and can be used with testing.TB to only log on test failure or run with -v
 func Test(t zaptest.TestingT, service string) Logger {
 	l := zaptest.NewLogger(t)
-	return Logger{service: service, s: l.Sugar(), cleanup: func() { l.Sync() }}.AddCallerSkip(1).Package(t.Name())
+	return Logger{service: service, s: l.Sugar(), cleanup: func() { _ = l.Sync() }}.AddCallerSkip(1).Package(t.Name())
 }
 
 // Close finishes and flushes up any in-flight logs
