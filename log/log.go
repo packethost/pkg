@@ -13,14 +13,11 @@
 package log
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc"
 
@@ -48,9 +45,11 @@ func setupConfig(service string) zap.Config {
 	}
 
 	if lvl := os.Getenv("LOG_LEVEL"); lvl != "" {
-		zl, err := parseLevel(lvl)
+		alvl := zap.NewAtomicLevel()
+		err := alvl.UnmarshalText([]byte(lvl))
 		if err == nil {
-			logLevel = &zl
+			zlvl := alvl.Level()
+			logLevel = &zlvl
 		}
 	}
 	// We expect that errors will already log the stacktrace from pkg/errors functionality as errorVerbose context
@@ -166,24 +165,4 @@ func (l Logger) Package(pkg string) Logger {
 func (l Logger) GRPCLoggers() (grpc.StreamServerInterceptor, grpc.UnaryServerInterceptor) {
 	logger := l.s.Desugar()
 	return grpc_zap.StreamServerInterceptor(logger), grpc_zap.UnaryServerInterceptor(logger)
-}
-
-func parseLevel(lvl string) (zapcore.Level, error) {
-	switch strings.ToLower(lvl) {
-	case "panic":
-		return zap.PanicLevel, nil
-	case "fatal":
-		return zap.FatalLevel, nil
-	case "error":
-		return zap.ErrorLevel, nil
-	case "warn", "warning":
-		return zap.WarnLevel, nil
-	case "info":
-		return zap.InfoLevel, nil
-	case "debug":
-		return zap.DebugLevel, nil
-	}
-
-	var l zapcore.Level
-	return l, fmt.Errorf("not a valid zap Level: %q", lvl)
 }
