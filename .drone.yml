@@ -7,22 +7,20 @@ workspace:
 pipeline:
   lint:
     group: ci
-    image: golang:1.12-alpine
+    image: golangci/golangci-lint:v1.23.1
     commands:
-      - apk add --update --upgrade --no-cache git
-      - GO111MODULE=on go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-      - CGO_ENABLED=0 golangci-lint run --disable-all -E errcheck
-      - gofmt -d . | (! grep '.')
+      - golangci-lint run -v --modules-download-mode vendor
+      - gofmt -d *.go | (! grep '.')
 
   test:
     group: ci
-    image: golang:1.12
+    image: golang:1.13.1
     commands:
       - GO111MODULE=on go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
   build:
     group: ci
-    image: golang:1.12-alpine
+    image: golang:1.13.1-alpine3.10
     commands:
       - GO111MODULE=on CGO_ENABLED=0 go build -mod=vendor ./cmd/...
 
