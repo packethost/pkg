@@ -37,11 +37,10 @@ func TestLogging(t *testing.T) {
 
 			service := fmt.Sprintf("testing-%v", tt.level)
 			logger, err := configureLogger(zap.New(core), service)
-			defer logger.Close()
-
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer logger.Close()
 
 			logger.Debug("debug")
 			logger.Info("info")
@@ -95,11 +94,10 @@ func TestContext(t *testing.T) {
 
 	service := fmt.Sprintf("testing-%v", zap.InfoLevel)
 	logger1, err := configureLogger(zap.New(core), service)
-	defer logger1.Close()
-
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer logger1.Close()
 
 	assertMapsEqual := func(want, got map[string]interface{}) {
 		if len(want) != len(got) {
