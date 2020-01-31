@@ -77,7 +77,7 @@ func logInternalError(err error, ctx map[string]interface{}) {
 }
 
 // Stack converts a github.com/pkg/errors Error stack into a rollbar stack
-func (e rError) Stack() rollbar.Stack {
+func (e rError) Stack() []runtime.Frame {
 	type stackTracer interface {
 		StackTrace() errors.StackTrace
 	}
@@ -107,7 +107,7 @@ func (e rError) Stack() rollbar.Stack {
 	}
 
 	stack := st.StackTrace()
-	rStack := rollbar.Stack(make([]rollbar.Frame, len(stack)))
+	rStack := make([]runtime.Frame, len(stack))
 
 	for i, frame := range stack {
 		// From pkg/error's docs
@@ -119,8 +119,8 @@ func (e rError) Stack() rollbar.Stack {
 		frame -= 1
 
 		f := runtime.FuncForPC(uintptr(frame))
-		rStack[i].Method = f.Name()
-		rStack[i].Filename, rStack[i].Line = f.FileLine(uintptr(frame))
+		rStack[i].Function = f.Name()
+		rStack[i].File, rStack[i].Line = f.FileLine(uintptr(frame))
 	}
 
 	return rStack

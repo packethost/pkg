@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	rollbar "github.com/rollbar/rollbar-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
@@ -17,7 +16,7 @@ func TestStack(t *testing.T) {
 	err := errors.New("hi")
 	n := runtime.Callers(1, pc)
 
-	stack := []rollbar.Frame(rError{err: err}.Stack())
+	stack := []runtime.Frame(rError{err: err}.Stack())
 	if n == 0 {
 		t.Fatal("unable to recover stack information")
 	}
@@ -38,12 +37,12 @@ func TestStack(t *testing.T) {
 		}
 
 		t.Logf("want: method=%v %v:%v", want.Function, want.File, want.Line)
-		t.Logf(" got: method=%v %v:%v", got.Method, got.Filename, got.Line)
-		if want.File != got.Filename {
-			t.Fatalf("filename mismatch: i=%d\nwant=%s\n got=%s\n", i, want.File, got.Filename)
+		t.Logf(" got: method=%v %v:%v", got.Function, got.File, got.Line)
+		if want.File != got.File {
+			t.Fatalf("filename mismatch: i=%d\nwant=%s\n got=%s\n", i, want.File, got.Function)
 		}
-		if want.Func.Name() != got.Method {
-			t.Fatalf("func name mismatch: i=%d\nwant=%s\n got=%s\n", i, want.Func.Name(), got.Method)
+		if want.Func.Name() != got.Function {
+			t.Fatalf("func name mismatch: i=%d\nwant=%s\n got=%s\n", i, want.Func.Name(), got.Function)
 		}
 		if want.Line != got.Line {
 			t.Fatalf("line number mismatch: i=%d\nwant=%d\n got=%d\n", i, want.Line, got.Line)
