@@ -14,13 +14,15 @@ pipeline:
 
   test:
     group: ci
-    image: golang:1.13.1
+    image: golang:1.13
+    pull: true
     commands:
       - GO111MODULE=on go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
   build:
     group: ci
-    image: golang:1.13.1-alpine3.10
+    image: golang:1.13-alpine3.10
+    pull: true
     commands:
       - GO111MODULE=on CGO_ENABLED=0 go build -mod=vendor ./cmd/...
 
