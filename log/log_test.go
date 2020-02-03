@@ -37,11 +37,10 @@ func TestLogging(t *testing.T) {
 
 			service := fmt.Sprintf("testing-%v", tt.level)
 			logger, err := configureLogger(zap.New(core), service)
-			defer logger.Close()
-
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer logger.Close()
 
 			logger.Debug("debug")
 			logger.Info("info")
@@ -95,11 +94,10 @@ func TestContext(t *testing.T) {
 
 	service := fmt.Sprintf("testing-%v", zap.InfoLevel)
 	logger1, err := configureLogger(zap.New(core), service)
-	defer logger1.Close()
-
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer logger1.Close()
 
 	assertMapsEqual := func(want, got map[string]interface{}) {
 		if len(want) != len(got) {
@@ -251,7 +249,7 @@ func ExampleLogger_Debug() {
 
 	l.Debug("debug message")
 	//Output:
-	//{"level":"debug","caller":"log/log_test.go:252","msg":"debug message","service":"github.com/packethost/pkg","pkg":"debug"}
+	//{"level":"debug","caller":"log/log_test.go:250","msg":"debug message","service":"github.com/packethost/pkg","pkg":"debug"}
 
 }
 
@@ -264,7 +262,7 @@ func ExampleLogger_Info() {
 	}()
 	l.Info("info message")
 	//Output:
-	//{"level":"info","caller":"log/log_test.go:265","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
+	//{"level":"info","caller":"log/log_test.go:263","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
 
 }
 
@@ -274,7 +272,7 @@ func ExampleLogger_Error() {
 
 	l.Error(fmt.Errorf("oh no an error"))
 	//Output:
-	//{"level":"error","caller":"log/log_test.go:275","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"error","error":"oh no an error"}
+	//{"level":"error","caller":"log/log_test.go:273","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"error","error":"oh no an error"}
 
 }
 
@@ -287,7 +285,7 @@ func ExampleLogger_Fatal() {
 	}()
 	l.Fatal(fmt.Errorf("oh no an error"))
 	//Output:
-	//{"level":"error","caller":"log/log_test.go:288","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"fatal","error":"oh no an error"}
+	//{"level":"error","caller":"log/log_test.go:286","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"fatal","error":"oh no an error"}
 
 }
 
@@ -297,7 +295,7 @@ func ExampleLogger_With() {
 
 	l.With("true", true).Info("info message")
 	//Output:
-	//{"level":"info","caller":"log/log_test.go:298","msg":"info message","service":"github.com/packethost/pkg","pkg":"with","true":true}
+	//{"level":"info","caller":"log/log_test.go:296","msg":"info message","service":"github.com/packethost/pkg","pkg":"with","true":true}
 
 }
 
@@ -309,6 +307,6 @@ func ExampleLogger_Package() {
 	l = l.Package("package")
 	l.Info("info message")
 	//Output:
-	//{"level":"info","caller":"log/log_test.go:308","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
-	//{"level":"info","caller":"log/log_test.go:310","msg":"info message","service":"github.com/packethost/pkg","pkg":"info","pkg":"package"}
+	//{"level":"info","caller":"log/log_test.go:306","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
+	//{"level":"info","caller":"log/log_test.go:308","msg":"info message","service":"github.com/packethost/pkg","pkg":"info","pkg":"package"}
 }
