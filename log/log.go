@@ -1,3 +1,6 @@
+// Copyright 2019 - 2020, Packethost, Inc and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Package log sets up a shared logger that can be used by all packages run under one binary.
 //
 // This package wraps zap very lightly so zap best practices apply here too, namely use `With` for KV pairs to add context to a line.

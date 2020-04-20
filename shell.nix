@@ -1,19 +1,18 @@
-let
-  _pkgs = import <nixpkgs> {};
-in
-{ pkgs ? import (_pkgs.fetchFromGitHub { owner = "NixOS";
-                                         repo = "nixpkgs-channels";
-                                         # nixos-unstable @2019-05-06
-                                         rev = "2ec5e9595becf05b052ce4c61a05d87ce95d19af";
-                                         sha256 = "1z9ajsff9iv0n70aa4ss5nqi21m8fvs27g88lyjbh43wgjbrc2sy";
-                                       }) {}
-}:
+let _pkgs = import <nixpkgs> { };
+in { pkgs ? import (_pkgs.fetchFromGitHub {
+  owner = "NixOS";
+  repo = "nixpkgs-channels";
+  #branch@date: nixpkgs-unstable@2020-02-01
+  rev = "e3a9318b6fdb2b022c0bda66d399e1e481b24b5c";
+  sha256 = "1hlblna9j0afvcm20p15f5is7cmwl96mc4vavc99ydc4yc9df62a";
+}) { } }:
 
 with pkgs;
 
 mkShell {
   buildInputs = [
-    dep
     go
+    goimports
+    golangci-lint
   ];
 }
