@@ -1,3 +1,6 @@
+// Copyright 2019 - 2020, Packethost, Inc and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package log
 
 import (
@@ -251,7 +254,7 @@ func ExampleLogger_Debug() {
 
 	l.Debug("debug message")
 	//Output:
-	//{"level":"debug","caller":"log/log_test.go:252","msg":"debug message","service":"github.com/packethost/pkg","pkg":"debug"}
+	//{"level":"debug","caller":"log/log_test.go:254","msg":"debug message","service":"github.com/packethost/pkg","pkg":"debug"}
 
 }
 
@@ -264,7 +267,7 @@ func ExampleLogger_Info() {
 	}()
 	l.Info("info message")
 	//Output:
-	//{"level":"info","caller":"log/log_test.go:265","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
+	//{"level":"info","caller":"log/log_test.go:267","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
 
 }
 
@@ -274,7 +277,7 @@ func ExampleLogger_Error() {
 
 	l.Error(fmt.Errorf("oh no an error"))
 	//Output:
-	//{"level":"error","caller":"log/log_test.go:275","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"error","error":"oh no an error"}
+	//{"level":"error","caller":"log/log_test.go:277","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"error","error":"oh no an error"}
 
 }
 
@@ -287,7 +290,7 @@ func ExampleLogger_Fatal() {
 	}()
 	l.Fatal(fmt.Errorf("oh no an error"))
 	//Output:
-	//{"level":"error","caller":"log/log_test.go:288","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"fatal","error":"oh no an error"}
+	//{"level":"error","caller":"log/log_test.go:290","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"fatal","error":"oh no an error"}
 
 }
 
@@ -297,7 +300,7 @@ func ExampleLogger_With() {
 
 	l.With("true", true).Info("info message")
 	//Output:
-	//{"level":"info","caller":"log/log_test.go:298","msg":"info message","service":"github.com/packethost/pkg","pkg":"with","true":true}
+	//{"level":"info","caller":"log/log_test.go:300","msg":"info message","service":"github.com/packethost/pkg","pkg":"with","true":true}
 
 }
 
@@ -309,6 +312,6 @@ func ExampleLogger_Package() {
 	l = l.Package("package")
 	l.Info("info message")
 	//Output:
-	//{"level":"info","caller":"log/log_test.go:308","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
-	//{"level":"info","caller":"log/log_test.go:310","msg":"info message","service":"github.com/packethost/pkg","pkg":"info","pkg":"package"}
+	//{"level":"info","caller":"log/log_test.go:310","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
+	//{"level":"info","caller":"log/log_test.go:312","msg":"info message","service":"github.com/packethost/pkg","pkg":"info","pkg":"package"}
 }
