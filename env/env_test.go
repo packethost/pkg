@@ -6,6 +6,7 @@ package env
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 func ExampleGet() {
@@ -25,4 +26,25 @@ func ExampleGet() {
 	//
 	// this is the value set
 	// this is the value set
+}
+
+func ExampleInt() {
+	name := "some_int_environment_variable_that_is_not_set"
+	os.Unsetenv(name)
+
+	fmt.Println(Int(name))
+	fmt.Println(Int(name, 42))
+	fmt.Println(Int(name, 42, 21))
+	fmt.Println(Int(name, 0, 48))
+
+	os.Setenv(name, strconv.Itoa(9))
+	fmt.Println(Int(name))
+	fmt.Println(Int(name, 42))
+	// Output:
+	// 0
+	// 42
+	// 42
+	// 0
+	// 9
+	// 9
 }
