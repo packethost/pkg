@@ -24,7 +24,7 @@ pipeline:
     group: ci
     image: golang:1.12-alpine
     commands:
-      - GO111MODULE=on CGO_ENABLED=0 go build -mod=vendor ./cmd/...
+      - GO111MODULE=on CGO_ENABLED=0 go build ./cmd/...
 
   examplelog:
     group: examples
