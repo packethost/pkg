@@ -4,6 +4,7 @@
 package env
 
 import (
+	"net/url"
 	"os"
 	"strconv"
 
@@ -38,4 +39,21 @@ func Int(name string, def ...int) int {
 		return def[0]
 	}
 	return 0
+}
+
+// URL parses given environment variable as a URL, or returns the default if the environment variable is empty/unset.
+// URL will panic if it fails to parse the value.
+func URL(name string, def ...string) *url.URL {
+	v := ""
+	if len(def) > 0 {
+		v = def[0]
+	}
+
+	value := Get(name, v)
+	u, err := url.Parse(value)
+	if err != nil {
+		err = errors.Wrap(err, "failed to parse URL from env var")
+		panic(err)
+	}
+	return u
 }
