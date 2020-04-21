@@ -3,7 +3,13 @@
 
 package env
 
-import "os"
+import (
+	"net/url"
+	"os"
+	"strconv"
+
+	"github.com/pkg/errors"
+)
 
 // Get retrieves the value of the environment variable named by the key.
 // If the value is empty or unset it will return the first value of def or "" if none is given
@@ -15,4 +21,39 @@ func Get(name string, def ...string) string {
 		return def[0]
 	}
 	return ""
+}
+
+// Int parses given environment variable as an int, or returns the default if the environment variable is empty/unset.
+// Int will panic if it fails to parse the value.
+func Int(name string, def ...int) int {
+	v := os.Getenv(name)
+	if v != "" {
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			err = errors.Wrap(err, "failed to parse int from env var")
+			panic(err)
+		}
+		return i
+	}
+	if len(def) > 0 {
+		return def[0]
+	}
+	return 0
+}
+
+// URL parses given environment variable as a URL, or returns the default if the environment variable is empty/unset.
+// URL will panic if it fails to parse the value.
+func URL(name string, def ...string) *url.URL {
+	v := ""
+	if len(def) > 0 {
+		v = def[0]
+	}
+
+	value := Get(name, v)
+	u, err := url.Parse(value)
+	if err != nil {
+		err = errors.Wrap(err, "failed to parse URL from env var")
+		panic(err)
+	}
+	return u
 }
