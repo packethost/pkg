@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 func ExampleGet() {
@@ -68,4 +69,25 @@ func ExampleURL() {
 	// https://tinkerbell.org
 	// tinkerbell.org
 	// https://tinkerbell.org
+}
+
+func ExampleDuration() {
+	name := "some_duration_environment_variable_that_is_not_set"
+	os.Unsetenv(name)
+	fmt.Println(Duration(name))
+	fmt.Println(Duration(name, 15*time.Minute))
+	fmt.Println(Duration(name, 15*time.Minute, 2*time.Hour))
+	fmt.Println(Duration(name, 0, 2*time.Hour))
+	os.Setenv(name, "14m2s")
+	fmt.Println(Duration(name))
+	fmt.Println(Duration(name).Seconds())
+	fmt.Println(Duration(name, 30*time.Minute))
+	// Output:
+	// 0s
+	// 15m0s
+	// 15m0s
+	// 0s
+	// 14m2s
+	// 842
+	// 14m2s
 }

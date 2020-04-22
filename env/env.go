@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -56,4 +57,21 @@ func URL(name string, def ...string) *url.URL {
 		panic(err)
 	}
 	return u
+}
+
+// Duration parses given environment variable as a time.Duration, or returns the default if the environment variable is empty/unset.
+// Duration will panic if it fails to parse the value.
+func Duration(name string, def ...time.Duration) time.Duration {
+	var v time.Duration
+	if len(def) > 0 {
+		v = def[0]
+	}
+
+	value := Get(name, v.String())
+	d, err := time.ParseDuration(value)
+	if err != nil {
+		err = errors.Wrap(err, "failed to parse duration from env var")
+		panic(err)
+	}
+	return d
 }
