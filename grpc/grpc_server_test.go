@@ -1,3 +1,6 @@
+// Copyright 2015 - 2020, gRPC authros
+// SPDX-License-Identifier: Apache-2.0
+
 package grpc
 
 /*
