@@ -10,6 +10,57 @@ import (
 	"time"
 )
 
+func ExampleBool() {
+	name := "some_bool_environment_variable_that_is_not_set"
+	os.Unsetenv(name)
+
+	fmt.Println(Bool(name))
+	fmt.Println(Bool(name, true))
+	fmt.Println(Bool(name, true, false))
+	fmt.Println(Bool(name, false, true))
+
+	os.Setenv(name, "true")
+	fmt.Println(Bool(name))
+	fmt.Println(Bool(name, false))
+	os.Setenv(name, "false")
+	fmt.Println(Bool(name))
+	fmt.Println(Bool(name, true))
+	os.Setenv(name, "t")
+	fmt.Println(Bool(name))
+	fmt.Println(Bool(name, false))
+	os.Setenv(name, "f")
+	fmt.Println(Bool(name))
+	fmt.Println(Bool(name, true))
+	os.Setenv(name, "1")
+	fmt.Println(Bool(name))
+	fmt.Println(Bool(name, false))
+	os.Setenv(name, "0")
+	fmt.Println(Bool(name))
+	fmt.Println(Bool(name, true))
+	os.Setenv(name, "random-value")
+	fmt.Println(Bool(name))
+	fmt.Println(Bool(name, true))
+	// Output:
+	// false
+	// true
+	// true
+	// false
+	// true
+	// true
+	// false
+	// false
+	// true
+	// true
+	// false
+	// false
+	// true
+	// true
+	// false
+	// false
+	// false
+	// false
+}
+
 func ExampleGet() {
 	name := "some_environment_variable_that_is_not_set"
 	os.Unsetenv(name)

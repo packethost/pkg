@@ -7,10 +7,28 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 )
+
+// Bool parses given environment variables as a boolean, or returns the default if the environment variable is empty/unset.
+// If the value is empty or unset it will return the first value of def or false if none is given.
+// Evaluates true if the value case-insensitive matches 1|t|true|y|yes.
+func Bool(name string, def ...bool) bool {
+	if v := os.Getenv(name); v != "" {
+		v = strings.ToLower(v)
+		if v == "1" || v == "t" || v == "true" || v == "y" || v == "yes" {
+			return true
+		}
+		return false
+	}
+	if len(def) > 0 {
+		return def[0]
+	}
+	return false
+}
 
 // Get retrieves the value of the environment variable named by the key.
 // If the value is empty or unset it will return the first value of def or "" if none is given
