@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/packethost/pkg/env"
 	"github.com/pkg/errors"
 	rollbar "github.com/rollbar/rollbar-go"
 	"go.uber.org/zap"
@@ -24,15 +25,15 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 	}
 	rollbar.SetToken(token)
 
-	env := os.Getenv("PACKET_ENV")
-	if env == "" {
-		log.Panicw("required envvar is unset", "envvar", "PACKET_ENV")
+	pkgEnv := env.Get("ENV", env.Get("PACKET_ENV"))
+	if pkgEnv == "" {
+		log.Panicw("required envvar is unset", "envvar", "ENV")
 	}
-	rollbar.SetEnvironment(env)
+	rollbar.SetEnvironment(pkgEnv)
 
-	v := os.Getenv("PACKET_VERSION")
+	v := env.Get("VERSION", env.Get("PACKET_VERSION"))
 	if v == "" {
-		log.Panicw("required envvar is unset", "envvar", "PACKET_VERSION")
+		log.Panicw("required envvar is unset", "envvar", "VERSION")
 	}
 	rollbar.SetCodeVersion(v)
 	rollbar.SetServerRoot("/" + service)
