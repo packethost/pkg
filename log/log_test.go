@@ -175,7 +175,9 @@ func TestInit(t *testing.T) {
 	defer os.Unsetenv("DEBUG")
 	_, _ = Init("debug")
 
-	for _, env := range []string{"ROLLBAR_TOKEN", "PACKET_ENV", "PACKET_VERSION"} {
+	os.Setenv("ROLLBAR_TOKEN", "TEST-TOKEN")
+	defer os.Unsetenv("ROLLBAR_TOKEN")
+	for _, env := range []string{"PACKET_ENV", "PACKET_VERSION"} {
 		t.Run(env, func(t *testing.T) {
 			old := os.Getenv(env)
 			os.Unsetenv(env)
@@ -187,7 +189,6 @@ func TestInit(t *testing.T) {
 			t.Fatalf("should not have made it this far")
 		})
 	}
-
 }
 
 func TestFatal(t *testing.T) {
@@ -225,92 +226,4 @@ func TestFatal(t *testing.T) {
 	}()
 	logger.Fatal(want)
 	t.Fatal("should have panic'ed before getting here")
-}
-
-func setupForExamples(example string) Logger {
-	service := "github.com/packethost/pkg"
-	c := setupConfig(service)
-	c.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	c.OutputPaths = []string{"stdout"}
-	c.ErrorOutputPaths = c.OutputPaths
-	c.EncoderConfig.TimeKey = ""
-	z, err := buildConfig(c)
-	if err != nil {
-		panic(err)
-	}
-	logger, err := configureLogger(z, service)
-	if err != nil {
-		panic(err)
-	}
-
-	l := logger.Package(example)
-	return l
-}
-
-func ExampleLogger_Debug() {
-	l := setupForExamples("debug")
-	defer l.Close()
-
-	l.Debug("debug message")
-	//Output:
-	//{"level":"debug","caller":"log/log_test.go:254","msg":"debug message","service":"github.com/packethost/pkg","pkg":"debug"}
-
-}
-
-func ExampleLogger_Info() {
-	l := setupForExamples("info")
-	defer l.Close()
-
-	defer func() {
-		_ = recover()
-	}()
-	l.Info("info message")
-	//Output:
-	//{"level":"info","caller":"log/log_test.go:267","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
-
-}
-
-func ExampleLogger_Error() {
-	l := setupForExamples("error")
-	defer l.Close()
-
-	l.Error(fmt.Errorf("oh no an error"))
-	//Output:
-	//{"level":"error","caller":"log/log_test.go:277","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"error","error":"oh no an error"}
-
-}
-
-func ExampleLogger_Fatal() {
-	l := setupForExamples("fatal")
-	defer l.Close()
-
-	defer func() {
-		_ = recover()
-	}()
-	l.Fatal(fmt.Errorf("oh no an error"))
-	//Output:
-	//{"level":"error","caller":"log/log_test.go:290","msg":"oh no an error","service":"github.com/packethost/pkg","pkg":"fatal","error":"oh no an error"}
-
-}
-
-func ExampleLogger_With() {
-	l := setupForExamples("with")
-	defer l.Close()
-
-	l.With("true", true).Info("info message")
-	//Output:
-	//{"level":"info","caller":"log/log_test.go:300","msg":"info message","service":"github.com/packethost/pkg","pkg":"with","true":true}
-
-}
-
-func ExampleLogger_Package() {
-	l := setupForExamples("info")
-	defer l.Close()
-
-	l.Info("info message")
-	l = l.Package("package")
-	l.Info("info message")
-	//Output:
-	//{"level":"info","caller":"log/log_test.go:310","msg":"info message","service":"github.com/packethost/pkg","pkg":"info"}
-	//{"level":"info","caller":"log/log_test.go:312","msg":"info message","service":"github.com/packethost/pkg","pkg":"info","pkg":"package"}
 }
