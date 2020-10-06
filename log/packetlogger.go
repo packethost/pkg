@@ -139,7 +139,7 @@ func errLogsToStderr(c zap.Config) zap.Option {
 		return lvl >= zapcore.ErrorLevel
 	})
 	nonErrorLogs := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl < zapcore.ErrorLevel
+		return !errorLogs(lvl)
 	})
 	console := zapcore.Lock(os.Stdout)
 	consoleErrors := zapcore.Lock(os.Stderr)
