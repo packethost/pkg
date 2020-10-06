@@ -100,8 +100,7 @@ func NewPacketLogger(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 		zLevel = zap.DebugLevel
 	}
 	zapConfig.Level = zap.NewAtomicLevelAt(zLevel)
-	zapConfig.OutputPaths = pl.OutputPaths
-	zapConfig.OutputPaths = sliceDedupe(append(zapConfig.OutputPaths, "stdout"))
+	zapConfig.OutputPaths = sliceDedupe(append(pl.OutputPaths, "stdout"))
 
 	if pl.EnableErrLogsToStderr {
 		defaultZapOpts = append(defaultZapOpts, errLogsToStderr(zapConfig))
