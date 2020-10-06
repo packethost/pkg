@@ -54,11 +54,13 @@ func TestPacketLoggerRollbarEnabled(t *testing.T) {
 func TestPacketLoggerWithOptions(t *testing.T) {
 	expectedLogMsg := "new logger test message"
 	expectedKeyValue := "\"hello\":\"world\""
+	serviceName := "myservice"
+	expectedServiceKV := fmt.Sprintf("\"service\":\"%v\"", serviceName)
 	capturedOutput := captureOutput(func() {
 		l, _, err := NewPacketLogger(
 			WithLogLevel("debug"),
 			WithOutputPaths([]string{"stdout"}),
-			WithServiceName("testing"),
+			WithServiceName(serviceName),
 			WithKeysAndValues([]interface{}{"hello", "world"}),
 			WithKeysAndValues([]interface{}{"world", "hello"}),
 			WithEnableErrLogsToStderr(true),
@@ -73,6 +75,9 @@ func TestPacketLoggerWithOptions(t *testing.T) {
 	}
 	if !strings.Contains(capturedOutput, expectedKeyValue) {
 		t.Fatalf("expected to contain: %v, got: %v", expectedKeyValue, capturedOutput)
+	}
+	if !strings.Contains(capturedOutput, expectedServiceKV) {
+		t.Fatalf("expected to contain: %v, got: %v", expectedServiceKV, capturedOutput)
 	}
 	fmt.Println(capturedOutput)
 }

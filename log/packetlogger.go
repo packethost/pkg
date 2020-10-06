@@ -69,7 +69,7 @@ func NewPacketLogger(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 	)
 	var (
 		defaultOutputPaths   = []string{"stdout"}
-		defaultKeysAndValues = []interface{}{"service", defaultServiceName}
+		defaultKeysAndValues = []interface{}{}
 		zapConfig            = zap.NewProductionConfig()
 		zLevel               = zap.InfoLevel
 		defaultZapOpts       = []zap.Option{}
@@ -115,7 +115,8 @@ func NewPacketLogger(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 		zapLogger = zapLogger.WithOptions(rollbarOptions)
 	}
 	pl.Logger = zapr.NewLogger(zapLogger)
-	pl.Logger = pl.WithValues(pl.KeysAndValues...)
+	keysAndValues := append(pl.KeysAndValues, "service", pl.ServiceName)
+	pl.Logger = pl.WithValues(keysAndValues...)
 	return pl, zapLogger, err
 }
 
