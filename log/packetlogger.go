@@ -26,8 +26,8 @@ func WithServiceName(name string) LoggerOption {
 }
 
 // WithKeysAndValues adds extra key/value fields
-func WithKeysAndValues(kvs map[string]interface{}) LoggerOption {
-	return func(args *PacketLogger) { args.KeysAndValues = kvs }
+func WithKeysAndValues(kvs []interface{}) LoggerOption {
+	return func(args *PacketLogger) { args.KeysAndValues = append(args.KeysAndValues, kvs...) }
 }
 
 // WithEnableErrLogsToStderr sends .Error logs to stderr
@@ -51,7 +51,7 @@ type PacketLogger struct {
 	LogLevel              string
 	OutputPaths           []string
 	ServiceName           string
-	KeysAndValues         map[string]interface{}
+	KeysAndValues         []interface{}
 	EnableErrLogsToStderr bool
 	EnableRollbar         bool
 	RollbarConfig         RollbarConfig
@@ -69,9 +69,10 @@ func NewPacketLogger(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 	)
 	var (
 		defaultOutputPaths   = []string{"stdout"}
-		defaultKeysAndValues = map[string]interface{}{"service": defaultServiceName}
+		defaultKeysAndValues = []interface{}{"service", defaultServiceName}
 		zapConfig            = zap.NewProductionConfig()
 		zLevel               = zap.InfoLevel
+		defaultZapOpts       = []zap.Option{}
 		rollbarOptions       zap.Option
 		defaultRollbarConfig = RollbarConfig{
 			Token:   "123",
@@ -101,22 +102,21 @@ func NewPacketLogger(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 	zapConfig.Level = zap.NewAtomicLevelAt(zLevel)
 	zapConfig.OutputPaths = pl.OutputPaths
 	zapConfig.OutputPaths = sliceDedupe(append(zapConfig.OutputPaths, "stdout"))
-	zapConfig.InitialFields = pl.KeysAndValues
 
-	zapLogger, err := zapConfig.Build()
+	if pl.EnableErrLogsToStderr {
+		defaultZapOpts = append(defaultZapOpts, errLogsToStderr(zapConfig))
+	}
+
+	zapLogger, err := zapConfig.Build(defaultZapOpts...)
 	if err != nil {
 		return pl, zapLogger, errors.Wrap(err, "failed to build logger config")
 	}
-
 	if pl.EnableRollbar {
 		rollbarOptions = pl.RollbarConfig.setupRollbar(pl.ServiceName, zapLogger)
 		zapLogger = zapLogger.WithOptions(rollbarOptions)
 	}
-	if pl.EnableErrLogsToStderr {
-		zapLogger = zapLogger.WithOptions(errLogsToStderr(zapConfig))
-	}
-
 	pl.Logger = zapr.NewLogger(zapLogger)
+	pl.Logger = pl.WithValues(pl.KeysAndValues...)
 	return pl, zapLogger, err
 }
 
@@ -136,7 +136,7 @@ func sliceDedupe(elements []string) []string {
 
 func errLogsToStderr(c zap.Config) zap.Option {
 	errorLogs := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.ErrorLevel
+		return lvl == zapcore.ErrorLevel
 	})
 	nonErrorLogs := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return !errorLogs(lvl)
@@ -144,12 +144,14 @@ func errLogsToStderr(c zap.Config) zap.Option {
 	console := zapcore.Lock(os.Stdout)
 	consoleErrors := zapcore.Lock(os.Stderr)
 	encoder := zapcore.NewJSONEncoder(c.EncoderConfig)
+
 	core := zapcore.NewTee(
 		zapcore.NewCore(encoder, console, nonErrorLogs),
 		zapcore.NewCore(encoder, consoleErrors, errorLogs),
 	)
 	splitLogger := zap.WrapCore(func(c zapcore.Core) zapcore.Core {
 		return core
+
 	})
 	return splitLogger
 }
