@@ -136,7 +136,7 @@ func sliceDedupe(elements []string) []string {
 
 func errLogsToStderr(c zap.Config) zap.Option {
 	errorLogs := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl == zapcore.ErrorLevel
+		return lvl >= zapcore.ErrorLevel
 	})
 	nonErrorLogs := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return !errorLogs(lvl)
