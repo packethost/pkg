@@ -26,12 +26,13 @@ func TestPacketLogr(t *testing.T) {
 }
 
 func TestPacketLogrRollbarEnabled(t *testing.T) {
-	expectedLogMsg := "new logger test message"
+	expectedLogMsg := "test error message"
 
 	capturedOutput := captureOutput(func() {
 		l, _, err := NewPacketLogr(
 			WithLogLevel("debug"),
 			WithEnableRollbar(true),
+			WithServiceName("github.com/packethost/pkg"),
 			WithRollbarConfig(rollbarConfig{
 				token:   "badtoken",
 				env:     "production",
@@ -41,7 +42,7 @@ func TestPacketLogrRollbarEnabled(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		l.V(0).Error(errors.New("V0 testing error"), expectedLogMsg)
+		l.V(0).Error(errors.New("packetlogger test error"), expectedLogMsg)
 
 	})
 	if !strings.Contains(capturedOutput, expectedLogMsg) {

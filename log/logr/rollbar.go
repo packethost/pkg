@@ -23,7 +23,8 @@ func (c rollbarConfig) setupRollbar(service string, logger *zap.Logger) zap.Opti
 	rollbar.SetToken(c.token)
 	rollbar.SetEnvironment(c.env)
 	rollbar.SetCodeVersion(c.version)
-	rollbar.SetServerRoot("/" + service)
+	rollbar.SetServerRoot(service)
+
 	rollbar.SetLogger(rollbarLogger{logger})
 
 	rollbarCore := rollzap.NewRollbarCore(zapcore.ErrorLevel)
