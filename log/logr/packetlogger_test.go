@@ -1,4 +1,4 @@
-package log
+package logr
 
 import (
 	"bytes"
@@ -11,10 +11,10 @@ import (
 	"testing"
 )
 
-func TestPacketLogger(t *testing.T) {
+func TestPacketLogr(t *testing.T) {
 	expectedLogMsg := "new logger test message"
 	capturedOutput := captureOutput(func() {
-		l, _, err := NewPacketLogger()
+		l, _, err := NewPacketLogr()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -25,17 +25,17 @@ func TestPacketLogger(t *testing.T) {
 	}
 }
 
-func TestPacketLoggerRollbarEnabled(t *testing.T) {
+func TestPacketLogrRollbarEnabled(t *testing.T) {
 	expectedLogMsg := "new logger test message"
 
 	capturedOutput := captureOutput(func() {
-		l, _, err := NewPacketLogger(
+		l, _, err := NewPacketLogr(
 			WithLogLevel("debug"),
 			WithEnableRollbar(true),
-			WithRollbarConfig(RollbarConfig{
-				Token:   "badtoken",
-				Env:     "production",
-				Version: "v2",
+			WithRollbarConfig(rollbarConfig{
+				token:   "badtoken",
+				env:     "production",
+				version: "v2",
 			}),
 		)
 		if err != nil {
@@ -51,13 +51,13 @@ func TestPacketLoggerRollbarEnabled(t *testing.T) {
 
 }
 
-func TestPacketLoggerWithOptions(t *testing.T) {
+func TestPacketLogrWithOptions(t *testing.T) {
 	expectedLogMsg := "new logger test message"
 	expectedKeyValue := "\"hello\":\"world\""
 	serviceName := "myservice"
 	expectedServiceKV := fmt.Sprintf("\"service\":\"%v\"", serviceName)
 	capturedOutput := captureOutput(func() {
-		l, _, err := NewPacketLogger(
+		l, _, err := NewPacketLogr(
 			WithLogLevel("debug"),
 			WithOutputPaths([]string{"stdout"}),
 			WithServiceName(serviceName),

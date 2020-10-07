@@ -1,4 +1,4 @@
-package log
+package logr
 
 import (
 	"os"
@@ -12,56 +12,56 @@ import (
 
 // WithLogLevel sets the log level
 func WithLogLevel(level string) LoggerOption {
-	return func(args *PacketLogger) { args.LogLevel = level }
+	return func(args *PacketLogr) { args.logLevel = level }
 }
 
 // WithOutputPaths adds output paths
 func WithOutputPaths(paths []string) LoggerOption {
-	return func(args *PacketLogger) { args.OutputPaths = paths }
+	return func(args *PacketLogr) { args.outputPaths = paths }
 }
 
 // WithServiceName adds a service name a logged field
 func WithServiceName(name string) LoggerOption {
-	return func(args *PacketLogger) { args.ServiceName = name }
+	return func(args *PacketLogr) { args.serviceName = name }
 }
 
 // WithKeysAndValues adds extra key/value fields
 func WithKeysAndValues(kvs []interface{}) LoggerOption {
-	return func(args *PacketLogger) { args.KeysAndValues = append(args.KeysAndValues, kvs...) }
+	return func(args *PacketLogr) { args.keysAndValues = append(args.keysAndValues, kvs...) }
 }
 
 // WithEnableErrLogsToStderr sends .Error logs to stderr
 func WithEnableErrLogsToStderr(enable bool) LoggerOption {
-	return func(args *PacketLogger) { args.EnableErrLogsToStderr = enable }
+	return func(args *PacketLogr) { args.enableErrLogsToStderr = enable }
 }
 
 // WithEnableRollbar sends error logs to Rollbar service
 func WithEnableRollbar(enable bool) LoggerOption {
-	return func(args *PacketLogger) { args.EnableRollbar = enable }
+	return func(args *PacketLogr) { args.enableRollbar = enable }
 }
 
 // WithRollbarConfig customizes the Rollbar details
-func WithRollbarConfig(config RollbarConfig) LoggerOption {
-	return func(args *PacketLogger) { args.RollbarConfig = config }
+func WithRollbarConfig(config rollbarConfig) LoggerOption {
+	return func(args *PacketLogr) { args.rollbarConfig = config }
 }
 
-// PacketLogger is a wrapper around zap.SugaredLogger
-type PacketLogger struct {
+// PacketLogr is a wrapper around zap.SugaredLogger
+type PacketLogr struct {
 	logr.Logger
-	LogLevel              string
-	OutputPaths           []string
-	ServiceName           string
-	KeysAndValues         []interface{}
-	EnableErrLogsToStderr bool
-	EnableRollbar         bool
-	RollbarConfig         RollbarConfig
+	logLevel              string
+	outputPaths           []string
+	serviceName           string
+	keysAndValues         []interface{}
+	enableErrLogsToStderr bool
+	enableRollbar         bool
+	rollbarConfig         rollbarConfig
 }
 
 // LoggerOption for setting optional values
-type LoggerOption func(*PacketLogger)
+type LoggerOption func(*PacketLogr)
 
-// NewPacketLogger is the opionated packet logger setup
-func NewPacketLogger(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
+// NewPacketLogr is the opionated packet logger setup
+func NewPacketLogr(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 	// defaults
 	const (
 		defaultLogLevel    = "info"
@@ -74,35 +74,35 @@ func NewPacketLogger(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 		zLevel               = zap.InfoLevel
 		defaultZapOpts       = []zap.Option{}
 		rollbarOptions       zap.Option
-		defaultRollbarConfig = RollbarConfig{
-			Token:   "123",
-			Env:     "production",
-			Version: "1",
+		defaultRollbarConfig = rollbarConfig{
+			token:   "123",
+			env:     "production",
+			version: "1",
 		}
 	)
 
-	pl := &PacketLogger{
+	pl := &PacketLogr{
 		Logger:        nil,
-		LogLevel:      defaultLogLevel,
-		OutputPaths:   defaultOutputPaths,
-		ServiceName:   defaultServiceName,
-		KeysAndValues: defaultKeysAndValues,
-		EnableRollbar: false,
-		RollbarConfig: defaultRollbarConfig,
+		logLevel:      defaultLogLevel,
+		outputPaths:   defaultOutputPaths,
+		serviceName:   defaultServiceName,
+		keysAndValues: defaultKeysAndValues,
+		enableRollbar: false,
+		rollbarConfig: defaultRollbarConfig,
 	}
 
 	for _, opt := range opts {
 		opt(pl)
 	}
 
-	switch pl.LogLevel {
+	switch pl.logLevel {
 	case "debug":
 		zLevel = zap.DebugLevel
 	}
 	zapConfig.Level = zap.NewAtomicLevelAt(zLevel)
-	zapConfig.OutputPaths = sliceDedupe(append(pl.OutputPaths, "stdout"))
+	zapConfig.OutputPaths = sliceDedupe(append(pl.outputPaths, "stdout"))
 
-	if pl.EnableErrLogsToStderr {
+	if pl.enableErrLogsToStderr {
 		defaultZapOpts = append(defaultZapOpts, errLogsToStderr(zapConfig))
 	}
 
@@ -110,12 +110,12 @@ func NewPacketLogger(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 	if err != nil {
 		return pl, zapLogger, errors.Wrap(err, "failed to build logger config")
 	}
-	if pl.EnableRollbar {
-		rollbarOptions = pl.RollbarConfig.setupRollbar(pl.ServiceName, zapLogger)
+	if pl.enableRollbar {
+		rollbarOptions = pl.rollbarConfig.setupRollbar(pl.serviceName, zapLogger)
 		zapLogger = zapLogger.WithOptions(rollbarOptions)
 	}
 	pl.Logger = zapr.NewLogger(zapLogger)
-	keysAndValues := append(pl.KeysAndValues, "service", pl.ServiceName)
+	keysAndValues := append(pl.keysAndValues, "service", pl.serviceName)
 	pl.Logger = pl.WithValues(keysAndValues...)
 	return pl, zapLogger, err
 }
