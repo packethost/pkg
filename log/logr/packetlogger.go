@@ -158,7 +158,7 @@ func errLogsToStderr(c zap.Config) zap.Option {
 
 // handleFields converts a bunch of arbitrary key-value pairs into Zap fields.  It takes
 // additional pre-converted Zap fields, for use with automatically attached fields, like
-// `error`.
+// `error`. copy/paste from https://github.com/go-logr/zapr/blob/146009e52d528183a25bf1a1e3cf56d1ff3919b5/zapr.go#L79
 func handleFields(l *zap.Logger, args []interface{}, additional ...zap.Field) []zap.Field {
 	// a slightly modified version of zap.SugaredLogger.sweetenFields
 	if len(args) == 0 {
