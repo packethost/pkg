@@ -114,9 +114,9 @@ func NewPacketLogr(opts ...LoggerOption) (logr.Logger, *zap.Logger, error) {
 		rollbarOptions = pl.rollbarConfig.setupRollbar(pl.serviceName, zapLogger)
 		zapLogger = zapLogger.WithOptions(rollbarOptions)
 	}
-	pl.Logger = zapr.NewLogger(zapLogger)
 	keysAndValues := append(pl.keysAndValues, "service", pl.serviceName)
-	pl.Logger = pl.WithValues(keysAndValues...)
+	zapLogger = zapLogger.With(handleFields(zapLogger, keysAndValues)...)
+	pl.Logger = zapr.NewLogger(zapLogger)
 	return pl, zapLogger, err
 }
 
@@ -154,4 +154,49 @@ func errLogsToStderr(c zap.Config) zap.Option {
 
 	})
 	return splitLogger
+}
+
+// handleFields converts a bunch of arbitrary key-value pairs into Zap fields.  It takes
+// additional pre-converted Zap fields, for use with automatically attached fields, like
+// `error`. copy/paste from https://github.com/go-logr/zapr/blob/146009e52d528183a25bf1a1e3cf56d1ff3919b5/zapr.go#L79
+func handleFields(l *zap.Logger, args []interface{}, additional ...zap.Field) []zap.Field {
+	// a slightly modified version of zap.SugaredLogger.sweetenFields
+	if len(args) == 0 {
+		// fast-return if we have no suggared fields.
+		return additional
+	}
+
+	// unlike Zap, we can be pretty sure users aren't passing structured
+	// fields (since logr has no concept of that), so guess that we need a
+	// little less space.
+	fields := make([]zap.Field, 0, len(args)/2+len(additional))
+	for i := 0; i < len(args); {
+		// check just in case for strongly-typed Zap fields, which is illegal (since
+		// it breaks implementation agnosticism), so we can give a better error message.
+		if _, ok := args[i].(zap.Field); ok {
+			l.DPanic("strongly-typed Zap Field passed to logr", zap.Any("zap field", args[i]))
+			break
+		}
+
+		// make sure this isn't a mismatched key
+		if i == len(args)-1 {
+			l.DPanic("odd number of arguments passed as key-value pairs for logging", zap.Any("ignored key", args[i]))
+			break
+		}
+
+		// process a key-value pair,
+		// ensuring that the key is a string
+		key, val := args[i], args[i+1]
+		keyStr, isString := key.(string)
+		if !isString {
+			// if the key isn't a string, DPanic and stop logging
+			l.DPanic("non-string key argument passed to logging, ignoring all later arguments", zap.Any("invalid key", key))
+			break
+		}
+
+		fields = append(fields, zap.Any(keyStr, val))
+		i += 2
+	}
+
+	return append(fields, additional...)
 }
