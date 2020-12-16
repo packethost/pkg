@@ -25,16 +25,10 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 	}
 	rollbar.SetToken(token)
 
-	pkgEnv := env.Get("ENV", env.Get("PACKET_ENV"))
-	if pkgEnv == "" {
-		log.Panicw("required envvar is unset", "envvar", "ENV")
-	}
+	pkgEnv := getEnvironment()
 	rollbar.SetEnvironment(pkgEnv)
 
-	v := env.Get("VERSION", env.Get("PACKET_VERSION"))
-	if v == "" {
-		log.Panicw("required envvar is unset", "envvar", "VERSION")
-	}
+	v := getVersion()
 	rollbar.SetCodeVersion(v)
 	rollbar.SetServerRoot("/" + service)
 
@@ -133,4 +127,30 @@ func (e rError) Stack() rollbar.Stack {
 func Notify(err error, args ...interface{}) {
 	rErr := rError{err: err}
 	rollbar.Error(rErr)
+}
+
+func getEnvironment() string {
+	pkgEnv := env.Get("ENV", env.Get("EQUINIX_ENV"))
+	if pkgEnv == "" {
+		// EQUINIX_ENV was not set! Checking for PACKET_ENV - Packet no longer exists, please switch
+		pkgEnv = env.Get("ENV", env.Get("PACKET_ENV"))
+	}
+
+	if pkgEnv == "" {
+		log.Panicw("required envvar is unset", "envvar", "ENV")
+	}
+	return pkgEnv
+}
+
+func getVersion() string {
+	version := env.Get("VERSION", env.Get("EQUINIX_VERSION"))
+	if version == "" {
+		// EQUINIX_VERSION was not set! Checking for PACKET_VERSION - Packet no longer exists, please switch
+		version = env.Get("VERSION", env.Get("PACKET_VERSION"))
+	}
+
+	if version == "" {
+		log.Panicw("required envvar is unset", "envvar", "ENV")
+	}
+	return version
 }
