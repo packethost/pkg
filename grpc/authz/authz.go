@@ -121,19 +121,22 @@ func permissionDeniedError(msg string) error {
 	return status.Errorf(codes.PermissionDenied, "no permission to access this RPC %s", msg)
 }
 
+// doProtected checks if the method should be protected by auth or not. If so, then scopes
+// for the method are saved to Config.scopes for later use.
 func (c *Config) doProtected(ctx context.Context) (token string, protected bool, err error) {
-	token, err = grpc_auth.AuthFromMD(ctx, authorizationType)
-	if err != nil {
-		return token, protected, err
-	}
 	fullMethodName, _ := grpc.Method(ctx)
 	c.scopes, protected = c.ScopeMapping[fullMethodName]
 	if !protected {
 		return token, false, nil
 	}
+	token, err = grpc_auth.AuthFromMD(ctx, authorizationType)
+	if err != nil {
+		return token, protected, err
+	}
 	return token, true, nil
 }
 
+// doVerify runs some standard JWT validations against a token
 func (c *Config) doVerify(ctx context.Context, token string, verifier jwt.Verifier) ([]byte, error) {
 	newToken, err := jwt.ParseAndVerifyString(token, verifier)
 	if err != nil {
