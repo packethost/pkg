@@ -59,16 +59,14 @@ func TestHSTestSuite(t *testing.T) {
 		return nil
 	}
 
-	a := &AuthWithHS{
-		Base: Base{
-			Algorithm: jwt.HS256,
-			Audience:  "admin",
-			ScopeMapping: map[string][]string{
-				"/mwitkow.testproto.TestService/Ping": {"read"},
-			},
-			ValidateScopeFunc: verifyScopeFn,
+	a := &Config{
+		Algorithm: jwt.HS256,
+		Audience:  "admin",
+		ScopeMapping: map[string][]string{
+			"/mwitkow.testproto.TestService/Ping": {"read"},
 		},
-		Key: hsKey,
+		ValidateScopeFunc: verifyScopeFn,
+		HSKey:             hsKey,
 	}
 
 	s := &AuthzHSTestSuite{
