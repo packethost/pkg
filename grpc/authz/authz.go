@@ -21,8 +21,10 @@ type Config struct {
 	// scopes will be populated from the token that
 	// comes with the request
 	scopes []string
-	// ScopeMapping should hold full rpc method, given by
-	// grpc.UnaryServerInfo.FullMethod to allowed scopes
+	// ScopeMapping should hold full rpc methods, given by
+	// grpc.UnaryServerInfo.FullMethod, mapped to a slice of
+	// allowed scopes. Only the methods here will be protected
+	// by auth.
 	ScopeMapping map[string][]string
 	// ValidateScopeFunc is a user defined func for validating a token
 	// has the correct scopes. This will take in the decoded token json and
@@ -38,11 +40,6 @@ type Config struct {
 
 // ConfigOption for setting optional values
 type ConfigOption func(*Config)
-
-// WithScopeMapping sets the ScopeMapping option
-func WithScopeMapping(scopeMap map[string][]string) ConfigOption {
-	return func(args *Config) { args.ScopeMapping = scopeMap }
-}
 
 // WithValidateScopeFunc sets the ValidateScopeFunc option
 func WithValidateScopeFunc(scopeFunc func(tokenClaims []byte, scopes []string) error) ConfigOption {
@@ -70,9 +67,10 @@ func WithRSAPubKey(rsaPubKey *rsa.PublicKey) ConfigOption {
 }
 
 // NewConfig returns a new config with options
-func NewConfig(algo jwt.Algorithm, opts ...ConfigOption) *Config {
+func NewConfig(algo jwt.Algorithm, scopeMapping map[string][]string, opts ...ConfigOption) *Config {
 	defaultConfig := &Config{
 		Algorithm:         algo,
+		ScopeMapping:      scopeMapping,
 		ValidateScopeFunc: func(tokenClaims []byte, scopes []string) error { return nil },
 	}
 	for _, opt := range opts {
