@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	jwt "github.com/cristalhq/jwt/v3"
+	jwt_helper "github.com/dgrijalva/jwt-go"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +46,55 @@ func assertAuthMarkerExists(ctx context.Context, t *testing.T) {
 }
 
 func ctxWithToken(ctx context.Context, scheme string, token string) context.Context {
-	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", scheme, token))
-	nCtx := metautils.NiceMD(md).ToOutgoing(ctx)
-	return nCtx
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %s", scheme, token))
+	return metautils.NiceMD(md).ToOutgoing(ctx)
+}
+
+func ctxWithTokenIncoming(ctx context.Context, scheme string, token string) context.Context {
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %s", scheme, token))
+	return metautils.NiceMD(md).ToIncoming(ctx)
+}
+
+func TestNewConfig(t *testing.T) {
+	rsaPubKey, err := jwt_helper.ParseRSAPublicKeyFromPEM([]byte(pubKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedConfig := &Config{
+		Algorithm:    jwt.HS256,
+		ScopeMapping: map[string][]string{"one": {"one"}},
+		ValidateScopeFunc: func(tokenClaims []byte, scopes []string) error {
+			return nil
+		},
+		Audience:                  "admin",
+		DisableAudienceValidation: true,
+		HSKey:                     hsKey,
+		RSAPublicKey:              rsaPubKey,
+	}
+
+	config := NewConfig(
+		jwt.HS256,
+		WithScopeMapping(map[string][]string{"one": {"one"}}),
+		WithValidateScopeFunc(func(tokenClaims []byte, scopes []string) error { return nil }),
+		WithAudience("admin"),
+		WithDisableAudienceValidation(true),
+		WithHSKey(hsKey),
+		WithRSAPubKey(rsaPubKey),
+	)
+
+	if diff := cmp.Diff(expectedConfig, config, cmpopts.IgnoreFields(Config{}, "ValidateScopeFunc"), cmpopts.IgnoreUnexported(Config{})); diff != "" {
+		t.Fatalf(diff)
+	}
+
+	tk, err := createTokenHS([]string{}, jwt.HS256, hsKey, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := ctxWithTokenIncoming(context.Background(), "bearer", tk.String())
+
+	_, err = config.AuthFunc(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

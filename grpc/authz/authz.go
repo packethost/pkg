@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"crypto/rsa"
 	"encoding/json"
 	"time"
 
@@ -14,8 +15,8 @@ import (
 
 const authorizationType = "bearer"
 
-// Base auth details
-type Base struct {
+// Config auth details
+type Config struct {
 	Algorithm jwt.Algorithm
 	// scopes will be populated from the token that
 	// comes with the request
@@ -29,6 +30,87 @@ type Base struct {
 	ValidateScopeFunc         func(tokenClaims []byte, scopes []string) error
 	Audience                  string
 	DisableAudienceValidation bool
+	// HSKey for use with HS algorithms
+	HSKey []byte
+	// RSAPublicKey for use with RS algorithms
+	RSAPublicKey *rsa.PublicKey
+}
+
+// ConfigOption for setting optional values
+type ConfigOption func(*Config)
+
+// WithScopeMapping sets the ScopeMapping option
+func WithScopeMapping(scopeMap map[string][]string) ConfigOption {
+	return func(args *Config) { args.ScopeMapping = scopeMap }
+}
+
+// WithValidateScopeFunc sets the ValidateScopeFunc option
+func WithValidateScopeFunc(scopeFunc func(tokenClaims []byte, scopes []string) error) ConfigOption {
+	return func(args *Config) { args.ValidateScopeFunc = scopeFunc }
+}
+
+// WithAudience sets the audience
+func WithAudience(aud string) ConfigOption {
+	return func(args *Config) { args.Audience = aud }
+}
+
+// WithDisableAudienceValidation sets the WithDisableAudienceValidation option
+func WithDisableAudienceValidation(disable bool) ConfigOption {
+	return func(args *Config) { args.DisableAudienceValidation = disable }
+}
+
+// WithHSKey sets the HS key
+func WithHSKey(hKey []byte) ConfigOption {
+	return func(args *Config) { args.HSKey = hKey }
+}
+
+// WithRSAPubKey sets the RSA public key
+func WithRSAPubKey(rsaPubKey *rsa.PublicKey) ConfigOption {
+	return func(args *Config) { args.RSAPublicKey = rsaPubKey }
+}
+
+// NewConfig returns a new config with options
+func NewConfig(algo jwt.Algorithm, opts ...ConfigOption) *Config {
+	defaultConfig := &Config{
+		Algorithm:         algo,
+		ValidateScopeFunc: func(tokenClaims []byte, scopes []string) error { return nil },
+	}
+	for _, opt := range opts {
+		opt(defaultConfig)
+	}
+	return defaultConfig
+}
+
+// AuthFunc authorization function
+func (c *Config) AuthFunc(ctx context.Context) (context.Context, error) {
+	token, protected, err := c.doProtected(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	if !protected {
+		return ctx, nil
+	}
+	var verifier jwt.Verifier
+	switch c.Algorithm {
+	case jwt.HS256, jwt.HS384, jwt.HS512:
+		verifier, err = jwt.NewVerifierHS(c.Algorithm, c.HSKey)
+		if err != nil {
+			return ctx, status.Errorf(codes.FailedPrecondition, "verifier error: %v", err.Error())
+		}
+	case jwt.RS256, jwt.RS384, jwt.RS512:
+		verifier, err = jwt.NewVerifierRS(c.Algorithm, c.RSAPublicKey)
+		if err != nil {
+			return ctx, status.Errorf(codes.FailedPrecondition, "verifier error: %v", err.Error())
+		}
+	default:
+		return ctx, status.Errorf(codes.Unimplemented, "algorithm is not supported: %T", c.Algorithm)
+	}
+
+	rawToken, err := c.doVerify(ctx, token, verifier)
+	if err != nil {
+		return ctx, err
+	}
+	return ctx, c.ValidateScopeFunc(rawToken, c.scopes)
 }
 
 func unauthenticatedError(msg string) error {
@@ -39,21 +121,20 @@ func permissionDeniedError(msg string) error {
 	return status.Errorf(codes.PermissionDenied, "no permission to access this RPC %s", msg)
 }
 
-func (b *Base) doProtected(ctx context.Context) (string, error) {
-	token, err := grpc_auth.AuthFromMD(ctx, authorizationType)
+func (c *Config) doProtected(ctx context.Context) (token string, protected bool, err error) {
+	token, err = grpc_auth.AuthFromMD(ctx, authorizationType)
 	if err != nil {
-		return token, err
+		return token, protected, err
 	}
 	fullMethodName, _ := grpc.Method(ctx)
-	var protected bool
-	b.scopes, protected = b.ScopeMapping[fullMethodName]
+	c.scopes, protected = c.ScopeMapping[fullMethodName]
 	if !protected {
-		return token, nil
+		return token, false, nil
 	}
-	return token, nil
+	return token, true, nil
 }
 
-func (b *Base) doVerify(ctx context.Context, token string, verifier jwt.Verifier) ([]byte, error) {
+func (c *Config) doVerify(ctx context.Context, token string, verifier jwt.Verifier) ([]byte, error) {
 	newToken, err := jwt.ParseAndVerifyString(token, verifier)
 	if err != nil {
 		return nil, unauthenticatedError(err.Error())
@@ -74,8 +155,8 @@ func (b *Base) doVerify(ctx context.Context, token string, verifier jwt.Verifier
 	}
 
 	// Perform audience claim validation
-	if !b.DisableAudienceValidation {
-		if !newClaims.IsForAudience(b.Audience) {
+	if !c.DisableAudienceValidation {
+		if !newClaims.IsForAudience(c.Audience) {
 			return nil, unauthenticatedError("not for audience")
 		}
 	}

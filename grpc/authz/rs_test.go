@@ -97,20 +97,21 @@ func TestRSSuccessful(t *testing.T) {
 	}
 
 	pKey, _ := jwt_helper.ParseRSAPublicKeyFromPEM([]byte(pubKey))
-	a := &AuthWithRS{
-		RSAPublicKey: pKey,
-		Base: Base{
-			Algorithm: jwt.RS256,
-			ScopeMapping: map[string][]string{
-				"/mwitkow.testproto.TestService/Ping": {"read"},
-			},
-			Audience:          "admin",
-			ValidateScopeFunc: verifyScopeFn,
+	a := &Config{
+		Algorithm: jwt.RS256,
+		ScopeMapping: map[string][]string{
+			"/mwitkow.testproto.TestService/Ping": {"read"},
 		},
+		Audience:          "admin",
+		ValidateScopeFunc: verifyScopeFn,
+		RSAPublicKey:      pKey,
 	}
 	privateKey, _ := jwt_helper.ParseRSAPrivateKeyFromPEM([]byte(privKey))
 	sc := []string{"read", "write"}
-	tk, _ := createTokenRS(sc, jwt.RS256, privateKey, "admin")
+	tk, err := createTokenRS(sc, jwt.RS256, privateKey, "admin")
+	if err != nil {
+		t.Log(err)
+	}
 
 	s := &AuthzRSTestSuite{
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
