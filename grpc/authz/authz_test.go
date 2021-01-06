@@ -75,7 +75,7 @@ func TestNewConfig(t *testing.T) {
 
 	config := NewConfig(
 		jwt.HS256,
-		WithScopeMapping(map[string][]string{"one": {"one"}}),
+		map[string][]string{"one": {"one"}},
 		WithValidateScopeFunc(func(tokenClaims []byte, scopes []string) error { return nil }),
 		WithAudience("admin"),
 		WithDisableAudienceValidation(true),

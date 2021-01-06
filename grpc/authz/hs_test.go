@@ -63,7 +63,8 @@ func TestHSTestSuite(t *testing.T) {
 		Algorithm: jwt.HS256,
 		Audience:  "admin",
 		ScopeMapping: map[string][]string{
-			"/mwitkow.testproto.TestService/Ping": {"read"},
+			"/mwitkow.testproto.TestService/Ping":      {"read"},
+			"/mwitkow.testproto.TestService/PingEmpty": {"read"},
 		},
 		ValidateScopeFunc: verifyScopeFn,
 		HSKey:             hsKey,

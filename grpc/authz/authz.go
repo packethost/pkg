@@ -21,8 +21,10 @@ type Config struct {
 	// scopes will be populated from the token that
 	// comes with the request
 	scopes []string
-	// ScopeMapping should hold full rpc method, given by
-	// grpc.UnaryServerInfo.FullMethod to allowed scopes
+	// ScopeMapping should hold full rpc methods, given by
+	// grpc.UnaryServerInfo.FullMethod, mapped to a slice of
+	// allowed scopes. Only the methods here will be protected
+	// by auth.
 	ScopeMapping map[string][]string
 	// ValidateScopeFunc is a user defined func for validating a token
 	// has the correct scopes. This will take in the decoded token json and
@@ -38,11 +40,6 @@ type Config struct {
 
 // ConfigOption for setting optional values
 type ConfigOption func(*Config)
-
-// WithScopeMapping sets the ScopeMapping option
-func WithScopeMapping(scopeMap map[string][]string) ConfigOption {
-	return func(args *Config) { args.ScopeMapping = scopeMap }
-}
 
 // WithValidateScopeFunc sets the ValidateScopeFunc option
 func WithValidateScopeFunc(scopeFunc func(tokenClaims []byte, scopes []string) error) ConfigOption {
@@ -70,9 +67,10 @@ func WithRSAPubKey(rsaPubKey *rsa.PublicKey) ConfigOption {
 }
 
 // NewConfig returns a new config with options
-func NewConfig(algo jwt.Algorithm, opts ...ConfigOption) *Config {
+func NewConfig(algo jwt.Algorithm, scopeMapping map[string][]string, opts ...ConfigOption) *Config {
 	defaultConfig := &Config{
 		Algorithm:         algo,
+		ScopeMapping:      scopeMapping,
 		ValidateScopeFunc: func(tokenClaims []byte, scopes []string) error { return nil },
 	}
 	for _, opt := range opts {
@@ -121,19 +119,22 @@ func permissionDeniedError(msg string) error {
 	return status.Errorf(codes.PermissionDenied, "no permission to access this RPC %s", msg)
 }
 
+// doProtected checks if the method should be protected by auth or not. If so, then scopes
+// for the method are saved to Config.scopes for later use.
 func (c *Config) doProtected(ctx context.Context) (token string, protected bool, err error) {
-	token, err = grpc_auth.AuthFromMD(ctx, authorizationType)
-	if err != nil {
-		return token, protected, err
-	}
 	fullMethodName, _ := grpc.Method(ctx)
 	c.scopes, protected = c.ScopeMapping[fullMethodName]
 	if !protected {
 		return token, false, nil
 	}
+	token, err = grpc_auth.AuthFromMD(ctx, authorizationType)
+	if err != nil {
+		return token, protected, err
+	}
 	return token, true, nil
 }
 
+// doVerify runs some standard JWT validations against a token
 func (c *Config) doVerify(ctx context.Context, token string, verifier jwt.Verifier) ([]byte, error) {
 	newToken, err := jwt.ParseAndVerifyString(token, verifier)
 	if err != nil {
