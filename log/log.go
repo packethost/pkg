@@ -103,6 +103,9 @@ func (l Logger) Close() {
 // All the values of arg are stringified and concatenated without any strings.
 // If no args are provided err.Error() is used as the log message.
 func (l Logger) Error(err error, args ...interface{}) {
+	if err == nil {
+		return
+	}
 	if ok := os.Getenv("ROLLBAR_TOKEN"); ok != "" {
 		rollbar.Notify(err, args)
 	}
