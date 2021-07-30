@@ -14,6 +14,7 @@ import (
 	"github.com/packethost/pkg/env"
 	"github.com/packethost/pkg/log"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -53,8 +54,16 @@ func NewServer(l log.Logger, reg ServiceRegister, options ...Option) (*Server, e
 	s := &Server{}
 
 	logStream, logUnary := l.GRPCLoggers()
-	s.streamers = append(s.streamers, logStream, grpc_prometheus.StreamServerInterceptor)
-	s.unariers = append(s.unariers, logUnary, grpc_prometheus.UnaryServerInterceptor)
+	s.streamers = append(s.streamers,
+		logStream,
+		grpc_prometheus.StreamServerInterceptor,
+		otelgrpc.StreamServerInterceptor(),
+	)
+	s.unariers = append(s.unariers,
+		logUnary,
+		grpc_prometheus.UnaryServerInterceptor,
+		otelgrpc.UnaryServerInterceptor(),
+	)
 	s.registry = append(s.registry, grpc_prometheus.Register)
 
 	for _, opt := range options {
@@ -210,7 +219,7 @@ func LoadX509KeyPair(certFile, keyFile string) Option {
 }
 
 // StreamInterceptor adds the argument to the list of interceptors in a grpc_middleware.Chain
-// Logging and Prometheus interceptors are always included in the set
+// Logging, Prometheus, and OpenTelemetry interceptors are always included in the set
 func StreamInterceptor(si grpc.StreamServerInterceptor) Option {
 	return func(s *Server) {
 		s.streamers = append(s.streamers, si)
@@ -218,7 +227,7 @@ func StreamInterceptor(si grpc.StreamServerInterceptor) Option {
 }
 
 // UnaryInterceptor adds the argument to the list of interceptors in a grpc_middleware.Chain
-// Logging and Prometheus interceptors are always included in the set
+// Logging, Prometheus, and OpenTelemetry interceptors are always included in the set
 func UnaryInterceptor(ui grpc.UnaryServerInterceptor) Option {
 	return func(s *Server) {
 		s.unariers = append(s.unariers, ui)
