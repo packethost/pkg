@@ -219,7 +219,7 @@ func LoadX509KeyPair(certFile, keyFile string) Option {
 }
 
 // StreamInterceptor adds the argument to the list of interceptors in a grpc_middleware.Chain
-// Logging and Prometheus interceptors are always included in the set
+// Logging, Prometheus, and OpenTelemetry interceptors are always included in the set
 func StreamInterceptor(si grpc.StreamServerInterceptor) Option {
 	return func(s *Server) {
 		s.streamers = append(s.streamers, si)
@@ -227,7 +227,7 @@ func StreamInterceptor(si grpc.StreamServerInterceptor) Option {
 }
 
 // UnaryInterceptor adds the argument to the list of interceptors in a grpc_middleware.Chain
-// Logging and Prometheus interceptors are always included in the set
+// Logging, Prometheus, and OpenTelemetry interceptors are always included in the set
 func UnaryInterceptor(ui grpc.UnaryServerInterceptor) Option {
 	return func(s *Server) {
 		s.unariers = append(s.unariers, ui)
