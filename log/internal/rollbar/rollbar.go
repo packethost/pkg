@@ -40,6 +40,10 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 	return rollbar.Wait
 }
 
+func Notify(err error) {
+	rollbar.Error(err)
+}
+
 func getEnvironment() string {
 	pkgEnv := env.Get("ENV", env.Get("EQUINIX_ENV"))
 	if pkgEnv == "" {
