@@ -14,5 +14,6 @@ mkShell {
     go
     goimports
     golangci-lint
+    nixfmt
   ];
 }
