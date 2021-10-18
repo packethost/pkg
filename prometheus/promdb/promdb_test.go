@@ -58,15 +58,15 @@ func TestNewDatabaseCollectorWithNoLabels(t *testing.T) {
 	collector := NewDatabaseCollector(db)
 
 	if collector == nil {
-		t.Error("got nil collector want DatabaseCollector")
+		t.Fatal("got nil collector want DatabaseCollector")
 	}
 
 	if collector.db != db {
-		t.Errorf("got %+v database want %+v", collector.db, db)
+		t.Fatalf("got %+v database want %+v", collector.db, db)
 	}
 
 	if collector.labels != nil {
-		t.Errorf("got %q labels want nil", collector.labels)
+		t.Fatalf("got %q labels want nil", collector.labels)
 	}
 }
 
@@ -77,15 +77,15 @@ func TestNewDatabaseCollectorWithLabels(t *testing.T) {
 	collector := NewDatabaseCollectorWithLabels(db, labels)
 
 	if collector == nil {
-		t.Error("got nil collector want DatabaseCollector")
+		t.Fatal("got nil collector want DatabaseCollector")
 	}
 
 	if collector.db != db {
-		t.Errorf("got %+v database want %+v", collector.db, db)
+		t.Fatalf("got %+v database want %+v", collector.db, db)
 	}
 
 	if !labelsMatch(collector.labels, labels) {
-		t.Errorf("got %q labels want %q", collector.labels, labels)
+		t.Fatalf("got %q labels want %q", collector.labels, labels)
 	}
 }
 
