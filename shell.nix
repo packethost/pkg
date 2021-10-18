@@ -9,11 +9,4 @@ in { pkgs ? import (_pkgs.fetchFromGitHub {
 
 with pkgs;
 
-mkShell {
-  buildInputs = [
-    go
-    goimports
-    golangci-lint
-    nixfmt
-  ];
-}
+mkShell { buildInputs = [ go goimports golangci-lint nixfmt ]; }
