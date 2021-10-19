@@ -100,14 +100,14 @@ func (l Logger) Close() {
 }
 
 // Error is used to log an error, the error will be forwared to rollbar and/or other external services.
-// All the values of arg are stringified and concatenated without any strings.
+// All the values of arg are stringified and concatenated without any space.
 // If no args are provided err.Error() is used as the log message.
 func (l Logger) Error(err error, args ...interface{}) {
 	if err == nil {
 		return
 	}
 	if ok := os.Getenv("ROLLBAR_TOKEN"); ok != "" {
-		rollbar.Notify(err, args)
+		rollbar.Notify(err)
 	}
 	if len(args) == 0 {
 		args = append(args, err)

@@ -9,9 +9,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	rollbar "github.com/rollbar/rollbar-go"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
+	rollbarerr "github.com/rollbar/rollbar-go/errors"
 )
 
 func TestStack(t *testing.T) {
@@ -20,9 +18,9 @@ func TestStack(t *testing.T) {
 	err := errors.New("hi")
 	n := runtime.Callers(1, pc)
 
-	stack := []rollbar.Frame(rError{err: err}.Stack())
-	if n == 0 {
-		t.Fatal("unable to recover stack information")
+	stack, ok := rollbarerr.StackTracer(err)
+	if !ok {
+		t.Fatalf("rollbarerr.StackTracer returned false")
 	}
 	pc = pc[:n]
 	frames := runtime.CallersFrames(pc)
@@ -41,12 +39,12 @@ func TestStack(t *testing.T) {
 		}
 
 		t.Logf("want: method=%v %v:%v", want.Function, want.File, want.Line)
-		t.Logf(" got: method=%v %v:%v", got.Method, got.Filename, got.Line)
-		if want.File != got.Filename {
-			t.Fatalf("filename mismatch: i=%d\nwant=%s\n got=%s\n", i, want.File, got.Filename)
+		t.Logf(" got: method=%v %v:%v", got.Function, got.File, got.Line)
+		if want.File != got.File {
+			t.Fatalf("filename mismatch: i=%d\nwant=%s\n got=%s\n", i, want.File, got.File)
 		}
-		if want.Func.Name() != got.Method {
-			t.Fatalf("func name mismatch: i=%d\nwant=%s\n got=%s\n", i, want.Func.Name(), got.Method)
+		if want.Func.Name() != got.Function {
+			t.Fatalf("func name mismatch: i=%d\nwant=%s\n got=%s\n", i, want.Func.Name(), got.Function)
 		}
 		if want.Line != got.Line {
 			t.Fatalf("line number mismatch: i=%d\nwant=%d\n got=%d\n", i, want.Line, got.Line)
@@ -63,37 +61,22 @@ func TestStack(t *testing.T) {
 	}
 }
 
-func TestError(t *testing.T) {
-	err := errors.New("hi")
-	rErr := rError{err: err}
-	if rErr.Error() != err.Error() {
-		t.Fatalf("Error() mismatch:\nwant=%s\n got=%s\n", err.Error(), rErr.Error())
-	}
-}
-
-func TestCause(t *testing.T) {
-	err := errors.New("hi")
-	rErr := rError{err: err}
-	if rErr.Cause() != err {
-		t.Fatalf("Cause() mismatch:\nwant=%v\n got=%v\n", err, rErr.Cause())
-	}
-}
-
 func TestPkgErrorsCompat(t *testing.T) {
-	log = zaptest.NewLogger(t, zaptest.Level(zap.WarnLevel)).Sugar()
 	for name, err := range map[string]error{
 		"Errorf":                errors.Errorf("Errorf"),
 		"New":                   errors.New("New"),
-		"WithMessage":           errors.WithMessage(errors.New("New"), "WithMessage errors.New"),
 		"WithStack(fmt.Errorf)": errors.WithStack(fmt.Errorf("fmt.Errorf")),
 		"WithStack(errors.New)": errors.WithStack(errors.New("New")),
 		"Wrap(fmt.Errorf)":      errors.Wrap(fmt.Errorf("fmt.Errorf"), "Wrap fmt.Errrof"),
 		"Wrap(errors.New)":      errors.Wrap(errors.New("New"), "Wrap errors.New"),
 	} {
 		t.Run(name, func(t *testing.T) {
-			rErr := rError{err: err}
-			if rErr.Stack() == nil {
-				t.Fatalf("expected err to implement stackTracer but does not: %v", err)
+			stack, ok := rollbarerr.StackTracer(err)
+			if !ok {
+				t.Fatal("rollbarerr.StackTracer returned false")
+			}
+			if stack == nil {
+				t.Fatalf("expected err to implement rollbar.StackTracer but does not: %v", err)
 			}
 		})
 	}
