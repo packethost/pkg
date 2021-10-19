@@ -1,5 +1,4 @@
 ---
-
 workspace:
   base: /go
   path: src/github.com/packethost/pkg
@@ -7,7 +6,7 @@ workspace:
 pipeline:
   fmt:
     group: ci
-    image: golang:1.13-alpine
+    image: golang:1.17-alpine
     commands:
       - apk add --update --upgrade --no-cache git
       - go get golang.org/x/tools/cmd/goimports
@@ -15,21 +14,21 @@ pipeline:
 
   lint:
     group: ci
-    image: golangci/golangci-lint:v1.23.8
+    image: golangci/golangci-lint:v1.42
     commands:
       - golangci-lint run -v -D errcheck
 
   test:
     group: ci
-    image: golang:1.13
+    image: golang:1.17
     commands:
-      - GO111MODULE=on go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
   build:
     group: ci
-    image: golang:1.13-alpine
+    image: golang:1.17-alpine
     commands:
-      - GO111MODULE=on CGO_ENABLED=0 go build ./cmd/...
+      - CGO_ENABLED=0 go build ./cmd/...
 
   examplelog:
     group: examples
