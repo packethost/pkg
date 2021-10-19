@@ -81,18 +81,20 @@ func TestCause(t *testing.T) {
 
 func TestPkgErrorsCompat(t *testing.T) {
 	log = zaptest.NewLogger(t, zaptest.Level(zap.WarnLevel)).Sugar()
-	for _, err := range []error{
-		errors.Errorf("Errorf"),
-		errors.New("New"),
-		errors.WithMessage(errors.New("New"), "WithMessage errors.New"),
-		errors.WithStack(fmt.Errorf("fmt.Errorf")),
-		errors.WithStack(errors.New("New")),
-		errors.Wrap(fmt.Errorf("fmt.Errorf"), "Wrap fmt.Errrof"),
-		errors.Wrap(errors.New("New"), "Wrap errors.New"),
+	for name, err := range map[string]error{
+		"Errorf":                errors.Errorf("Errorf"),
+		"New":                   errors.New("New"),
+		"WithMessage":           errors.WithMessage(errors.New("New"), "WithMessage errors.New"),
+		"WithStack(fmt.Errorf)": errors.WithStack(fmt.Errorf("fmt.Errorf")),
+		"WithStack(errors.New)": errors.WithStack(errors.New("New")),
+		"Wrap(fmt.Errorf)":      errors.Wrap(fmt.Errorf("fmt.Errorf"), "Wrap fmt.Errrof"),
+		"Wrap(errors.New)":      errors.Wrap(errors.New("New"), "Wrap errors.New"),
 	} {
-		rErr := rError{err: err}
-		if rErr.Stack() == nil {
-			t.Fatalf("expected err to implement stackTracer but does not: %v", err)
-		}
+		t.Run(name, func(t *testing.T) {
+			rErr := rError{err: err}
+			if rErr.Stack() == nil {
+				t.Fatalf("expected err to implement stackTracer but does not: %v", err)
+			}
+		})
 	}
 }
