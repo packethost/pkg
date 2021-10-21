@@ -19,8 +19,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer l.Close()
 
-	ll := l.Package("log")
+	ll := l.Package("cmd/examplelog")
 	ll.With("debug", true).Debug("hello this is a debug message")
 	ll.With("debug", false).Info("hello this is a Info message")
 
@@ -31,5 +32,4 @@ func main() {
 	ll.Error(errors.WithMessage(err, "error with an extra WithMessage"))
 
 	helpfulWrapper(ll, "this is being called via helpfulWrapper")
-	l.Close()
 }
