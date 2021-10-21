@@ -28,6 +28,8 @@ func main() {
 	ll.With("error", err).Info("just an info level message about an error")
 	ll.Error(err, "this is an actual error! Will even go to rollbar where we can ignore it or not")
 
+	ll.Error(errors.WithMessage(err, "error with an extra WithMessage"))
+
 	helpfulWrapper(ll, "this is being called via helpfulWrapper")
 	l.Close()
 }
