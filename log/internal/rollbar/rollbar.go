@@ -28,7 +28,6 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 
 	v := getVersion()
 	rollbar.SetCodeVersion(v)
-	rollbar.SetServerRoot("/" + service)
 
 	enable := true
 	if os.Getenv("ROLLBAR_DISABLE") != "" {
