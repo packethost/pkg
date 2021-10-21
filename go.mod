@@ -14,6 +14,7 @@ require (
 	github.com/rollbar/rollbar-go v1.4.2
 	github.com/rollbar/rollbar-go/errors v0.0.0-20210929193720-32947096267e
 	github.com/stretchr/testify v1.7.0
+	github.com/tinkerbell/lint-install v0.0.0-20211012174934-5ee5ab01db76
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.25.0
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
@@ -24,4 +25,5 @@ require (
 	google.golang.org/genproto v0.0.0-20211018162055-cf77aa76bad2 // indirect
 	google.golang.org/grpc v1.41.0
 	google.golang.org/grpc/examples v0.0.0-20210728214646-ad0a2a847cdf
+	mvdan.cc/gofumpt v0.1.1
 )
