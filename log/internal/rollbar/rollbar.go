@@ -19,7 +19,7 @@ func Setup(l *zap.SugaredLogger, service string) func() {
 
 	token := os.Getenv("ROLLBAR_TOKEN")
 	if token == "" {
-		log.Panicw("required envvar is unset", "envvar", "ROLLBAR_TOKEN")
+		log.Panicw("required envvar(ROLLBAR_TOKEN) is unset", "envvar", "ROLLBAR_TOKEN")
 	}
 	rollbar.SetToken(token)
 
@@ -51,7 +51,7 @@ func getEnvironment() string {
 	}
 
 	if pkgEnv == "" {
-		log.Panicw("required envvar is unset", "envvar", "ENV")
+		log.Panicw("required envvar(ENV) is unset", "envvar", "ENV")
 	}
 	return pkgEnv
 }
@@ -64,7 +64,7 @@ func getVersion() string {
 	}
 
 	if version == "" {
-		log.Panicw("required envvar is unset", "envvar", "VERSION")
+		log.Panicw("required envvar(VERSION) is unset", "envvar", "VERSION")
 	}
 	return version
 }
