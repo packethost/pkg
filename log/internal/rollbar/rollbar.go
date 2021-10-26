@@ -64,7 +64,7 @@ func getVersion() string {
 	}
 
 	if version == "" {
-		log.Panicw("required envvar is unset", "envvar", "ENV")
+		log.Panicw("required envvar is unset", "envvar", "VERSION")
 	}
 	return version
 }
