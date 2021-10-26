@@ -195,6 +195,8 @@ func serve(t *testing.T, s *Server, test func()) {
 	wg.Add(1)
 
 	go func() {
+		s.port = 0
+		s.listen()
 		wg.Done()
 		if err := s.Serve(); err != nil {
 			panic(err)
