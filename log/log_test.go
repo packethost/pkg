@@ -6,6 +6,7 @@ package log
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
@@ -161,12 +162,21 @@ func TestContext(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
+	oldEnv := os.Environ()
+	defer func() {
+		os.Clearenv()
+		for _, e := range oldEnv {
+			kv := strings.SplitN(e, "=", 2)
+			os.Setenv(kv[0], kv[1])
+		}
+	}()
+	os.Clearenv()
+
 	t.Run("defaults", func(t *testing.T) {
 		_, _ = Init("defaults")
 	})
 
 	os.Setenv("LOG_DISCARD_LOGS", "true")
-	defer os.Unsetenv("LOG_DISCARD_LOGS")
 
 	t.Run("debug mode", func(t *testing.T) {
 		l, _ := Init("debug")
@@ -184,10 +194,9 @@ func TestInit(t *testing.T) {
 
 	})
 
+	// Rest of the tests will test the rollbar setup
 	os.Setenv("ROLLBAR_TOKEN", "TEST-TOKEN")
-	defer os.Unsetenv("ROLLBAR_TOKEN")
 	os.Setenv("ROLLBAR_DISABLE", "1")
-	defer os.Unsetenv("ROLLBAR_DISABLE")
 
 	t.Run("RollbarMissingVersionPanics", func(t *testing.T) {
 		// ensure Init fails if none of the *ENV vars are set
