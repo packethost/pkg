@@ -164,15 +164,27 @@ func TestInit(t *testing.T) {
 		_, _ = Init("defaults")
 	})
 
-	t.Run("debug mode", func(t *testing.T) {
-		_, _ = Init("debug")
-		os.Setenv("DEBUG", "1")
-		defer os.Unsetenv("DEBUG")
-		_, _ = Init("debug")
-	})
-
 	os.Setenv("LOG_DISCARD_LOGS", "true")
 	defer os.Unsetenv("LOG_DISCARD_LOGS")
+
+	t.Run("debug mode", func(t *testing.T) {
+		l, _ := Init("debug")
+		l.s.DPanic("this should not panic")
+
+		os.Setenv("DEBUG", "1")
+		defer os.Unsetenv("DEBUG")
+
+		defer func() {
+			_ = recover()
+		}()
+		l, _ = Init("debug")
+
+		// we don't actually care about DPanic, but its a nice/easy indicator that zap was setup for debugging
+		l.s.DPanic("this should panic")
+
+		t.Fatal("DPanic should have panic'ed")
+	})
+
 	os.Setenv("ROLLBAR_TOKEN", "TEST-TOKEN")
 	defer os.Unsetenv("ROLLBAR_TOKEN")
 	for _, env := range []string{"PACKET_ENV", "PACKET_VERSION"} {
