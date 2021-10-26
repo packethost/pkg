@@ -6,9 +6,9 @@ package log
 import (
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
+	"github.com/packethost/pkg/internal/testenv"
 	assert "github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -162,15 +162,7 @@ func TestContext(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
-	oldEnv := os.Environ()
-	defer func() {
-		os.Clearenv()
-		for _, e := range oldEnv {
-			kv := strings.SplitN(e, "=", 2)
-			os.Setenv(kv[0], kv[1])
-		}
-	}()
-	os.Clearenv()
+	defer testenv.Clear().Restore()
 
 	t.Run("defaults", func(t *testing.T) {
 		_, _ = Init("defaults")

@@ -8,11 +8,13 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/packethost/pkg/internal/testenv"
 )
 
 func ExampleBool() {
+	defer testenv.Clear().Restore()
 	name := "some_bool_environment_variable_that_is_not_set"
-	os.Unsetenv(name)
 
 	fmt.Println(Bool(name))
 	fmt.Println(Bool(name, true))
@@ -62,8 +64,9 @@ func ExampleBool() {
 }
 
 func ExampleGet() {
+	defer testenv.Clear().Restore()
+
 	name := "some_environment_variable_that_is_not_set"
-	os.Unsetenv(name)
 	fmt.Println(Get(name))
 	fmt.Println(Get(name, "this is the default"))
 	fmt.Println(Get(name, "this is the default", "this one is ignored"))
@@ -81,9 +84,9 @@ func ExampleGet() {
 }
 
 func ExampleInt() {
-	name := "some_int_environment_variable_that_is_not_set"
-	os.Unsetenv(name)
+	defer testenv.Clear().Restore()
 
+	name := "some_int_environment_variable_that_is_not_set"
 	fmt.Println(Int(name))
 	fmt.Println(Int(name, 42))
 	fmt.Println(Int(name, 42, 21))
@@ -102,8 +105,9 @@ func ExampleInt() {
 }
 
 func ExampleURL() {
+	defer testenv.Clear().Restore()
+
 	name := "some_url_environment_variable_that_is_not_set"
-	os.Unsetenv(name)
 	fmt.Println(URL(name))
 	fmt.Println(URL(name, "https://packet.com"))
 	fmt.Println(URL(name, "https://packet.com", "https://www.equinix.com"))
@@ -123,8 +127,9 @@ func ExampleURL() {
 }
 
 func ExampleDuration() {
+	defer testenv.Clear().Restore()
+
 	name := "some_duration_environment_variable_that_is_not_set"
-	os.Unsetenv(name)
 	fmt.Println(Duration(name))
 	fmt.Println(Duration(name, 15*time.Minute))
 	fmt.Println(Duration(name, 15*time.Minute, 2*time.Hour))

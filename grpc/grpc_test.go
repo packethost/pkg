@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/packethost/pkg/internal/testenv"
 	"github.com/packethost/pkg/log"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -75,6 +76,8 @@ func TestDefaultsAndOrdering(t *testing.T) {
 }
 
 func TestPort(t *testing.T) {
+	defer testenv.Clear().Restore()
+
 	l := log.Test(t, svc)
 	assert := require.New(t)
 
@@ -232,6 +235,8 @@ func connectGRPC(t *testing.T, port int, cert string) error {
 }
 
 func TestX509(t *testing.T) {
+	defer testenv.Clear().Restore()
+
 	t.Run("insecure", func(t *testing.T) {
 		l := log.Test(t, svc)
 		assert := require.New(t)
