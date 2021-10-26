@@ -193,10 +193,12 @@ func TestInit(t *testing.T) {
 	t.Run("RollbarMissingVersionPanics", func(t *testing.T) {
 		// ensure Init fails if none of the *ENV vars are set
 		// we need one of VERSION to exist
-		os.Setenv("PACKET_VERSION", "VERSION")
-		defer os.Unsetenv("PACKET_VERSION")
+		os.Setenv("VERSION", "VERSION")
+		defer os.Unsetenv("VERSION")
 
 		for _, env := range []string{
+			"ENV",
+			"EQUINIX_ENV",
 			"PACKET_ENV",
 		} {
 			t.Run(env, func(t *testing.T) {
@@ -214,10 +216,12 @@ func TestInit(t *testing.T) {
 	t.Run("RollbarMissingVersionPanics", func(t *testing.T) {
 		// ensure Init fails if none of the *VERSION vars are set
 		// we need one of ENV to exist
-		os.Setenv("PACKET_ENV", "ENV")
-		defer os.Unsetenv("PACKET_ENV")
+		os.Setenv("ENV", "ENV")
+		defer os.Unsetenv("ENV")
 
 		for _, env := range []string{
+			"VERSION",
+			"EQUINIX_VERSION",
 			"PACKET_VERSION",
 		} {
 			t.Run(env, func(t *testing.T) {
