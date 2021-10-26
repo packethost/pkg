@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"sync"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -22,13 +23,17 @@ import (
 // Server is used to hold configured info and ultimately the grpc server
 type Server struct {
 	err       error
-	port      int
 	server    *grpc.Server
 	cert      tls.Certificate
 	options   []grpc.ServerOption
 	streamers []grpc.StreamServerInterceptor
 	unariers  []grpc.UnaryServerInterceptor
 	registry  []func(*grpc.Server)
+
+	mu       sync.RWMutex
+	port     int
+	once     sync.Once
+	listener net.Listener
 }
 
 // The ServiceRegister type is used as a callback once the underlying grpc server is setup to register the main service.
@@ -99,6 +104,8 @@ func NewServer(l log.Logger, reg ServiceRegister, options ...Option) (*Server, e
 
 // Port returns the port the server is listening on
 func (s *Server) Port() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.port
 }
 
@@ -107,15 +114,49 @@ func (s *Server) Server() *grpc.Server {
 	return s.server
 }
 
+func (s *Server) listen() error {
+	var err error
+	s.once.Do(func() {
+		s.mu.RLock()
+		port := s.port
+		s.mu.RUnlock()
+
+		s.listener, err = net.Listen("tcp", fmt.Sprintf(":%d", port)) //nolint:ineffassign // we do in fact want to assign to err in the outer scope
+		if err != nil {
+			err = errors.Wrap(err, "listen")
+			return
+		}
+
+		var p string
+		_, p, err = net.SplitHostPort(s.listener.Addr().String()) //nolint:ineffassign // we do in fact want to assign to err in the outer scope
+		if err != nil {
+			err = errors.Wrap(err, "extract server port")
+			return
+		}
+
+		port, err = strconv.Atoi(p)
+		if err != nil {
+			err = errors.Wrap(err, "parse server port")
+			return
+		}
+
+		s.mu.Lock()
+		s.port = port
+		s.mu.Unlock()
+	})
+
+	return err
+}
+
 // Serve starts the grpc server
 func (s *Server) Serve() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
+	err := s.listen()
 	if err != nil {
-		return errors.Wrap(err, "listen")
+		return err
 	}
-	defer lis.Close()
 
-	return errors.Wrap(s.server.Serve(lis), "serve")
+	defer s.listener.Close()
+	return errors.Wrap(s.server.Serve(s.listener), "serve")
 }
 
 // ServerOption will add the opt param to the underlying grpc.NewServer() call.
