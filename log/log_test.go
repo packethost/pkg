@@ -160,11 +160,16 @@ func TestContext(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
-	_, _ = Init("non-debug")
+	t.Run("defaults", func(t *testing.T) {
+		_, _ = Init("defaults")
+	})
 
-	os.Setenv("DEBUG", "1")
-	defer os.Unsetenv("DEBUG")
-	_, _ = Init("debug")
+	t.Run("debug mode", func(t *testing.T) {
+		_, _ = Init("debug")
+		os.Setenv("DEBUG", "1")
+		defer os.Unsetenv("DEBUG")
+		_, _ = Init("debug")
+	})
 
 	os.Setenv("LOG_DISCARD_LOGS", "true")
 	defer os.Unsetenv("LOG_DISCARD_LOGS")
