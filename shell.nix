@@ -9,4 +9,20 @@ in { pkgs ? import (_pkgs.fetchFromGitHub {
 
 with pkgs;
 
-mkShell { buildInputs = [ go goimports golangci-lint nixfmt ]; }
+mkShell {
+  buildInputs = [
+    curl
+    docker
+    docker-compose
+    git
+    gnumake
+    gnused
+    go
+    nixfmt
+    nodePackages.prettier
+    pigz
+    protobuf
+    python3Packages.pip
+    python3Packages.setuptools
+  ];
+}

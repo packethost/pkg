@@ -12,5 +12,11 @@
 *.out
 
 coverage.txt
-/examplelog
+cmd/examplelog/examplelog
 .idea/
+
+bin/
+
+
+# added by lint-install
+out/
