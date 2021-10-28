@@ -347,6 +347,7 @@ func TestListen(t *testing.T) {
 		s, err := NewServer(l, defSrv)
 		assert.NoError(t, err)
 		assert.NotNil(t, s)
+		s.port = 0
 
 		go func() {
 			if err := s.Serve(); err != nil {
