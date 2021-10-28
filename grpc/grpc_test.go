@@ -20,8 +20,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/packethost/pkg/internal/testenv"
 	"github.com/packethost/pkg/log"
 	"github.com/stretchr/testify/require"
+	assert "github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
@@ -64,7 +66,7 @@ func TestDefaultsAndOrdering(t *testing.T) {
 	s, err := NewServer(l, srv, pre1, Register(reg1), pre2, Register(reg2))
 	assert.NoError(err)
 	assert.NotNil(s)
-	assert.Equal(s.port, 8080)
+	assert.Equal(s.Port(), 8080)
 
 	// ensure order
 	assert.True(pre1I > 0)
@@ -75,13 +77,15 @@ func TestDefaultsAndOrdering(t *testing.T) {
 }
 
 func TestPort(t *testing.T) {
+	defer testenv.Clear().Restore()
+
 	l := log.Test(t, svc)
 	assert := require.New(t)
 
 	s, err := NewServer(l, defSrv)
 	assert.NoError(err)
 	assert.NotNil(s)
-	assert.Equal(s.port, 8080)
+	assert.Equal(s.Port(), 8080)
 	assert.Equal(s.Port(), 8080)
 
 	os.Setenv("GRPC_PORT", "4242")
@@ -90,13 +94,13 @@ func TestPort(t *testing.T) {
 	s, err = NewServer(l, defSrv)
 	assert.NoError(err)
 	assert.NotNil(s)
-	assert.Equal(s.port, 4242)
+	assert.Equal(s.Port(), 4242)
 	assert.Equal(s.Port(), 4242)
 
 	s, err = NewServer(l, defSrv, Port(2424))
 	assert.NoError(err)
 	assert.NotNil(s)
-	assert.Equal(s.port, 2424)
+	assert.Equal(s.Port(), 2424)
 	assert.Equal(s.Port(), 2424)
 
 	os.Setenv("GRPC_PORT", "0")
@@ -191,6 +195,8 @@ func serve(t *testing.T, s *Server, test func()) {
 	wg.Add(1)
 
 	go func() {
+		s.port = 0
+		s.listen()
 		wg.Done()
 		if err := s.Serve(); err != nil {
 			panic(err)
@@ -232,6 +238,8 @@ func connectGRPC(t *testing.T, port int, cert string) error {
 }
 
 func TestX509(t *testing.T) {
+	defer testenv.Clear().Restore()
+
 	t.Run("insecure", func(t *testing.T) {
 		l := log.Test(t, svc)
 		assert := require.New(t)
@@ -240,7 +248,7 @@ func TestX509(t *testing.T) {
 		assert.NoError(err)
 		assert.NotNil(s)
 		serve(t, s, func() {
-			assert.NoError(connectGRPC(t, s.port, ""))
+			assert.NoError(connectGRPC(t, s.Port(), ""))
 		})
 	})
 
@@ -257,8 +265,8 @@ func TestX509(t *testing.T) {
 		assert.NoError(err)
 		assert.NotNil(s)
 		serve(t, s, func() {
-			assert.Error(connectGRPC(t, s.port, ""))
-			assert.NoError(connectGRPC(t, s.port, certE))
+			assert.Error(connectGRPC(t, s.Port(), ""))
+			assert.NoError(connectGRPC(t, s.Port(), certE))
 		})
 	})
 
@@ -271,9 +279,9 @@ func TestX509(t *testing.T) {
 		assert.NoError(err)
 		assert.NotNil(s)
 		serve(t, s, func() {
-			assert.Error(connectGRPC(t, s.port, ""))
-			assert.Error(connectGRPC(t, s.port, certE))
-			assert.NoError(connectGRPC(t, s.port, certKP))
+			assert.Error(connectGRPC(t, s.Port(), ""))
+			assert.Error(connectGRPC(t, s.Port(), certE))
+			assert.NoError(connectGRPC(t, s.Port(), certKP))
 		})
 	})
 
@@ -287,10 +295,10 @@ func TestX509(t *testing.T) {
 		assert.NoError(err)
 		assert.NotNil(s)
 		serve(t, s, func() {
-			assert.Error(connectGRPC(t, s.port, ""))
-			assert.Error(connectGRPC(t, s.port, certE))
-			assert.Error(connectGRPC(t, s.port, certKP))
-			assert.NoError(connectGRPC(t, s.port, certLKP))
+			assert.Error(connectGRPC(t, s.Port(), ""))
+			assert.Error(connectGRPC(t, s.Port(), certE))
+			assert.Error(connectGRPC(t, s.Port(), certKP))
+			assert.NoError(connectGRPC(t, s.Port(), certLKP))
 		})
 	})
 
@@ -301,5 +309,54 @@ func TestX509(t *testing.T) {
 		s, err := NewServer(l, defSrv, X509KeyPair(certKP, keyKP), LoadX509KeyPair(certLKP, keyLKP))
 		assert.Error(err)
 		assert.Nil(s)
+	})
+}
+
+func TestListen(t *testing.T) {
+	t.Run("invalid port fails", func(t *testing.T) {
+		s := Server{port: -1}
+		assert.Error(t, s.listen())
+		assert.Nil(t, s.listener)
+	})
+	t.Run("port 0 updates .port", func(t *testing.T) {
+		s := Server{}
+		assert.NoError(t, s.listen())
+		assert.NotNil(t, s.listener)
+		defer s.listener.Close()
+
+		assert.NotZero(t, s.Port())
+	})
+	t.Run("can run 2 servers by using port 0", func(t *testing.T) {
+		s1 := Server{}
+		assert.NoError(t, s1.listen())
+		assert.NotNil(t, s1.listener)
+		defer s1.listener.Close()
+		assert.NotZero(t, s1.port)
+
+		s2 := Server{}
+		assert.NoError(t, s2.listen())
+		assert.NotNil(t, s2.listener)
+		defer s2.listener.Close()
+		assert.NotZero(t, s2.port)
+
+		assert.NotEqual(t, s1.port, s2.port)
+	})
+	t.Run("Serve calls s.listen if necessary", func(t *testing.T) {
+		l := log.Test(t, t.Name())
+
+		s, err := NewServer(l, defSrv)
+		assert.NoError(t, err)
+		assert.NotNil(t, s)
+
+		go func() {
+			if err := s.Serve(); err != nil {
+				panic(err)
+			}
+		}()
+
+		for port := s.Port(); port == 0; port = s.Port() {
+			time.Sleep(100 * time.Microsecond)
+		}
+		assert.NoError(t, connectGRPC(t, s.Port(), ""))
 	})
 }

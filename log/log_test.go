@@ -8,19 +8,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/packethost/pkg/internal/testenv"
+	assert "github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
 )
-
-func TestMain(m *testing.M) {
-	os.Setenv("LOG_DISCARD_LOGS", "true")
-	os.Setenv("ROLLBAR_TOKEN", "foo")
-	os.Setenv("PACKET_ENV", "test")
-	os.Setenv("PACKET_VERSION", "1")
-	os.Setenv("ROLLBAR_DISABLE", "1")
-	os.Exit(m.Run())
-}
 
 func TestLogging(t *testing.T) {
 	errorMessage := "the flobnarm overheated"
@@ -169,26 +162,79 @@ func TestContext(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
-	_, _ = Init("non-debug")
+	defer testenv.Clear().Restore()
 
-	os.Setenv("DEBUG", "1")
-	defer os.Unsetenv("DEBUG")
-	_, _ = Init("debug")
+	t.Run("defaults", func(t *testing.T) {
+		_, _ = Init("defaults")
+	})
 
-	os.Setenv("ROLLBAR_TOKEN", "TEST-TOKEN")
-	defer os.Unsetenv("ROLLBAR_TOKEN")
-	for _, env := range []string{"PACKET_ENV", "PACKET_VERSION"} {
-		t.Run(env, func(t *testing.T) {
-			old := os.Getenv(env)
-			os.Unsetenv(env)
-			defer func() {
-				os.Setenv(env, old)
-				_ = recover()
-			}()
-			_, _ = Init("should-fail")
-			t.Fatalf("should not have made it this far")
+	os.Setenv("LOG_DISCARD_LOGS", "true")
+
+	t.Run("debug mode", func(t *testing.T) {
+		l, _ := Init("debug")
+		l.s.DPanic("this should not panic")
+
+		os.Setenv("DEBUG", "1")
+		defer os.Unsetenv("DEBUG")
+
+		l, _ = Init("debug")
+
+		assert.Panics(t, func() {
+			// we don't actually care about DPanic, but its a nice/easy indicator that zap was setup for debugging
+			l.s.DPanic("this should panic")
 		})
-	}
+
+	})
+
+	// Rest of the tests will test the rollbar setup
+	os.Setenv("ROLLBAR_TOKEN", "TEST-TOKEN")
+	os.Setenv("ROLLBAR_DISABLE", "1")
+
+	t.Run("RollbarMissingVersionPanics", func(t *testing.T) {
+		// ensure Init fails if none of the *ENV vars are set
+		// we need one of VERSION to exist
+		os.Setenv("VERSION", "VERSION")
+		defer os.Unsetenv("VERSION")
+
+		for _, env := range []string{
+			"ENV",
+			"EQUINIX_ENV",
+			"PACKET_ENV",
+		} {
+			t.Run(env, func(t *testing.T) {
+				os.Setenv(env, env)
+				_, _ = Init(env + " set: should-not-fail")
+
+				os.Unsetenv(env)
+				assert.PanicsWithValue(t, "required envvar(ENV) is unset", func() {
+					_, _ = Init(env + " unset: should-fail")
+				})
+			})
+		}
+	})
+
+	t.Run("RollbarMissingVersionPanics", func(t *testing.T) {
+		// ensure Init fails if none of the *VERSION vars are set
+		// we need one of ENV to exist
+		os.Setenv("ENV", "ENV")
+		defer os.Unsetenv("ENV")
+
+		for _, env := range []string{
+			"VERSION",
+			"EQUINIX_VERSION",
+			"PACKET_VERSION",
+		} {
+			t.Run(env, func(t *testing.T) {
+				os.Setenv(env, env)
+				_, _ = Init(env + " set: should-not-fail")
+
+				os.Unsetenv(env)
+				assert.PanicsWithValue(t, "required envvar(VERSION) is unset", func() {
+					_, _ = Init(env + " unset: should-fail")
+				})
+			})
+		}
+	})
 }
 
 func TestFatal(t *testing.T) {
