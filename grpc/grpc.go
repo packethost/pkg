@@ -50,6 +50,7 @@ type Option func(*Server)
 // A tls server is setup if keys are provided in either the environment variables GRPC_CERT/GRPC_KEY, or using the X509KeyPair or LoadX509KeyPair helper funcs.
 // Logging is always setup using the provided log.Logger.
 // Prometheus is always setup using the default prom interceptors and Register func.
+// OpenTelemetry is setup for unary servers, but NOT streaming servers. Use StreamingInterceptor to add it if you really want/need it.
 //
 // req is called after the server has been setup.
 // This is where your service is gets registered with grpc, equivalent to pb.RegisterMyServiceServer(s, &myServiceImpl{}).
@@ -62,7 +63,6 @@ func NewServer(l log.Logger, reg ServiceRegister, options ...Option) (*Server, e
 	s.streamers = append(s.streamers,
 		logStream,
 		grpc_prometheus.StreamServerInterceptor,
-		otelgrpc.StreamServerInterceptor(),
 	)
 	s.unariers = append(s.unariers,
 		logUnary,
@@ -260,7 +260,8 @@ func LoadX509KeyPair(certFile, keyFile string) Option {
 }
 
 // StreamInterceptor adds the argument to the list of interceptors in a grpc_middleware.Chain
-// Logging, Prometheus, and OpenTelemetry interceptors are always included in the set
+// Logging and Prometheus interceptors are always included in the set. OpenTelemetry is NOT
+// included by default on streams because it's noisy and can't be on by default.
 func StreamInterceptor(si grpc.StreamServerInterceptor) Option {
 	return func(s *Server) {
 		s.streamers = append(s.streamers, si)
