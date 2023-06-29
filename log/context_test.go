@@ -10,6 +10,12 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
+func TestGetLoggerNoop(t *testing.T) {
+	ctx := context.Background()
+
+	GetLogger(ctx).Info("this message should not be visible")
+}
+
 func TestContextEmbedding(t *testing.T) {
 	bar := func(ctx context.Context) {
 		GetLogger(ctx).Info("bar called")
